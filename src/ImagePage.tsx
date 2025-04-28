@@ -123,7 +123,6 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="A beautiful painting in the style of Van Gogh"
-            disabled={!canGenerate}
           />
           <button
             className="mt-4 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"

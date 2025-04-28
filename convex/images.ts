@@ -3,7 +3,6 @@ import { mutation, query, action, internalAction } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal } from "./_generated/api";
 import { ensureFP } from "../shared/ensure";
-import { vv } from "./lib";
 import OpenAI from "openai";
 import { match } from "ts-pattern";
 
@@ -90,26 +89,6 @@ export const startGeneration = mutation({
   },
 });
 
-export const mockGenerate = action({
-  args: {
-    imageId: v.id("images"),
-    image: v.object({ url: v.string(), storageId: v.id("_storage") }),
-  },
-  handler: async (ctx, args) => {
-    // Mock generation delay
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
-    await ctx.runMutation(api.images.finishGeneration, {
-      imageId: args.imageId,
-      image: args.image,
-      decoratedImage: {
-        url: "https://picsum.photos/400/300",
-        storageId: args.imageId as any,
-      }, // mock storageId
-    });
-  },
-});
-
 export const findImage = query({
   args: {
     imageId: v.id("images"),
@@ -155,7 +134,7 @@ export const listImages = query({
       .query("images")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
-      .collect();
+      .take(20);
   },
 });
 
@@ -232,12 +211,10 @@ export const generateDecoratedImage = internalAction({
       model: "gpt-image-1",
       prompt,
       n: 1,
-      size: "1024x1024",
     });
 
-    if (!editResponse.data || !editResponse.data[0].b64_json) {
+    if (!editResponse.data || !editResponse.data[0].b64_json)
       throw new Error("No image data returned from OpenAI image edit endpoint");
-    }
 
     // Store the generated image in Convex storage
     console.log(
@@ -254,15 +231,18 @@ export const generateDecoratedImage = internalAction({
     const blob = new Blob([bytes], { type: "image/png" });
     const storageId = await ctx.storage.store(blob);
     const url = await ctx.storage.getUrl(storageId);
-    if (!url) {
-      throw new Error("Failed to get storage URL after upload");
-    }
+    if (!url) throw new Error("Failed to get storage URL after upload");
 
-    await ctx.runMutation(api.images.finishGeneration, {
-      imageId,
-      image,
-      decoratedImage: { url, storageId },
-    });
+    try {
+      await ctx.runMutation(api.images.finishGeneration, {
+        imageId,
+        image,
+        decoratedImage: { url, storageId },
+      });
+    } catch (e) {
+      console.error(e);
+      await ctx.storage.delete(storageId);
+    }
 
     console.log(`[generateDecoratedImage] Done for imageId: ${imageId}`);
   },
