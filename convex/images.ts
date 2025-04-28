@@ -5,9 +5,11 @@ import {
   action,
   internalQuery,
   internalMutation,
+  internalAction,
 } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal } from "./_generated/api";
+import { OpenAI } from "openai";
 
 export const generateUploadUrl = mutation({
   args: {},
@@ -46,6 +48,7 @@ export const markUploaded = mutation({
 export const startGeneration = mutation({
   args: {
     imageId: v.id("images"),
+    prompt: v.string(),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -56,7 +59,6 @@ export const startGeneration = mutation({
     if (image.status.kind !== "uploaded" && image.status.kind !== "generated")
       throw new Error("Image not ready");
 
-    // Store the original URL on the document for later use
     const originalUrl =
       image.status.kind === "uploaded" ? image.status.url : image.originalUrl;
     await ctx.db.patch(args.imageId, {
@@ -64,9 +66,10 @@ export const startGeneration = mutation({
       status: { kind: "generating" },
     });
 
-    // Schedule the mock generation
-    await ctx.scheduler.runAfter(0, api.images.mockGenerate, {
+    // Schedule the real AI generation
+    await ctx.scheduler.runAfter(0, internal.images.generateDecoratedImage, {
       imageId: args.imageId,
+      prompt: args.prompt,
     });
   },
 });
@@ -151,5 +154,60 @@ export const deleteImage = mutation({
     // Optionally, handle other states if you store storageId
 
     await ctx.db.delete(args.imageId);
+  },
+});
+
+// Helper to convert base64 to Uint8Array (Convex-compatible)
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binaryString = globalThis.atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+  return bytes;
+}
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+export const generateDecoratedImage = internalAction({
+  args: {
+    imageId: v.id("images"),
+    prompt: v.string(),
+  },
+  handler: async (ctx, { imageId, prompt }) => {
+    const response = await openai.images.generate({
+      model: "gpt-image-1",
+      prompt,
+      size: "auto",
+      n: 1,
+    });
+
+    if (
+      !response.data ||
+      response.data.length === 0 ||
+      !response.data[0].b64_json
+    ) {
+      throw new Error("No image data returned from OpenAI");
+    }
+
+    const bytes = base64ToUint8Array(response.data[0].b64_json);
+    const blob = new Blob([bytes], { type: "image/png" });
+    const storageId = await ctx.storage.store(blob);
+    const url = await ctx.storage.getUrl(storageId);
+    if (!url) throw new Error("Failed to get storage URL after upload");
+
+    // Get the original image (for originalUrl)
+    const image = await ctx.runQuery(api.images.getImage, { imageId });
+    const originalUrl =
+      image?.status.kind === "uploaded"
+        ? image.status.url
+        : (image?.originalUrl ?? "");
+
+    await ctx.runMutation(api.images.finishGeneration, {
+      imageId,
+      originalUrl,
+      decoratedUrl: url,
+    });
   },
 });

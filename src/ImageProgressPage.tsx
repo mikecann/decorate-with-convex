@@ -129,7 +129,7 @@ export default function ImageProgressPage({ imageId }: ImageProgressPageProps) {
                 image.status.kind !== "generated")
             }
             onClick={() =>
-              startGeneration({ imageId: imageId as Id<"images"> })
+              startGeneration({ imageId: imageId as Id<"images">, prompt })
             }
           >
             {image && image.status.kind === "generated"
