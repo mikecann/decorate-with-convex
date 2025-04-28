@@ -18,7 +18,7 @@ export default function ImageProgressPage({ imageId }: ImageProgressPageProps) {
   }, []);
 
   return (
-    <div className="max-w-lg mx-auto w-full space-y-8">
+    <div className="relative max-w-lg mx-auto w-full space-y-8">
       <button
         className="absolute top-4 left-4 bg-white rounded-full shadow p-2 text-gray-700 hover:bg-gray-100"
         onClick={handleBack}
@@ -52,6 +52,12 @@ export default function ImageProgressPage({ imageId }: ImageProgressPageProps) {
             className="w-full h-64 object-cover rounded-lg"
           />
         )}
+        <div className="text-sm text-gray-500 text-center font-medium mt-4">
+          {(!image || image.status.kind === "uploading") && "Uploading..."}
+          {image && image.status.kind === "uploaded" && "Uploaded"}
+          {image && image.status.kind === "generating" && "Generating..."}
+          {image && image.status.kind === "generated" && "Generation complete!"}
+        </div>
       </div>
     </div>
   );

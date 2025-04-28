@@ -93,56 +93,72 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {images.map((image) => (
-          <div key={image._id} className="border rounded-lg p-4 space-y-4">
-            {image.status.kind === "uploading" && (
-              <div className="animate-pulse bg-gray-200 h-48 rounded-lg flex items-center justify-center">
-                Uploading...
-              </div>
-            )}
-            {image.status.kind === "uploaded" && (
-              <div className="space-y-4">
+        {images.map((image) => {
+          let statusLabel = "";
+          if (image.status.kind === "uploading") statusLabel = "Uploading...";
+          else if (image.status.kind === "uploaded") statusLabel = "Uploaded";
+          else if (image.status.kind === "generating")
+            statusLabel = "Generating...";
+          else if (image.status.kind === "generated")
+            statusLabel = "Generation complete!";
+
+          return (
+            <div
+              key={image._id}
+              className="border rounded-lg p-4 space-y-4 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() =>
+                routes.imageProgress({ imageId: image._id.toString() }).push()
+              }
+              tabIndex={0}
+              role="button"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ")
+                  routes
+                    .imageProgress({ imageId: image._id.toString() })
+                    .push();
+              }}
+            >
+              {image.status.kind === "uploading" && (
+                <div className="animate-pulse bg-gray-200 h-48 rounded-lg flex items-center justify-center">
+                  Uploading...
+                </div>
+              )}
+              {image.status.kind === "uploaded" && (
                 <img
                   src={image.status.url}
                   alt="Original"
                   className="w-full h-48 object-cover rounded-lg"
                 />
-                <button
-                  onClick={() => startGeneration({ imageId: image._id })}
-                  className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
-                >
-                  Start Generation
-                </button>
-              </div>
-            )}
-            {image.status.kind === "generating" && (
-              <div className="space-y-4">
-                <div className="animate-pulse bg-gray-200 h-48 rounded-lg flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              )}
+              {image.status.kind === "generating" && (
+                <div className="space-y-4">
+                  <div className="animate-pulse bg-gray-200 h-48 rounded-lg flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  </div>
                 </div>
-              </div>
-            )}
-            {image.status.kind === "generated" && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-2">
-                  <img
-                    src={image.status.originalUrl}
-                    alt="Original"
-                    className="w-full h-24 object-cover rounded-lg"
-                  />
-                  <img
-                    src={image.status.decoratedUrl}
-                    alt="Decorated"
-                    className="w-full h-24 object-cover rounded-lg"
-                  />
+              )}
+              {image.status.kind === "generated" && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    <img
+                      src={image.status.originalUrl}
+                      alt="Original"
+                      className="w-full h-24 object-cover rounded-lg"
+                    />
+                    <img
+                      src={image.status.decoratedUrl}
+                      alt="Decorated"
+                      className="w-full h-24 object-cover rounded-lg"
+                    />
+                  </div>
                 </div>
-                <p className="text-sm text-gray-500 text-center">
-                  Generation complete!
-                </p>
+              )}
+              <div className="text-sm text-gray-500 text-center font-medium mt-2">
+                {statusLabel}
               </div>
-            )}
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
