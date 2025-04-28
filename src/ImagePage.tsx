@@ -202,7 +202,7 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
               tabIndex={0}
               aria-label="Hold or hover to preview original image"
             >
-              <div className="bg-white/80 border border-[var(--color-border)] rounded-2xl shadow-xl flex items-center justify-center w-full h-full p-4 transition-all duration-300">
+              <div className="rounded-2xl flex items-center justify-center w-full h-full p-4 transition-all duration-300">
                 <img
                   src={
                     previewOriginal

@@ -19,7 +19,7 @@ export default function Dashboard() {
   const handleUpload = useImageUpload();
 
   return (
-    <div className="max-w-6xl mx-auto w-full space-y-10">
+    <div className="max-w-6xl p-4 md:p-8 mx-auto w-full space-y-10">
       <div
         className={`card border-2 border-dashed p-10 text-center transition-colors flex flex-col items-center justify-center mb-8 ${
           isDragging
@@ -69,17 +69,32 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {images.map((image) => {
           let statusLabel = "";
-          if (image.status.kind === "uploading") statusLabel = "Uploading...";
-          else if (image.status.kind === "uploaded") statusLabel = "Uploaded";
-          else if (image.status.kind === "generating")
-            statusLabel = "Generating...";
-          else if (image.status.kind === "generated")
-            statusLabel = "Generation complete!";
+          let statusColor = "";
+          if (image.status.kind === "uploading") {
+            statusLabel = "Uploading";
+            statusColor = "bg-gray-200 text-gray-700 border-gray-300";
+          } else if (image.status.kind === "uploaded") {
+            statusLabel = "Uploaded";
+            statusColor = "bg-blue-100 text-blue-700 border-blue-200";
+          } else if (image.status.kind === "generating") {
+            statusLabel = "Generating";
+            statusColor = "bg-yellow-100 text-yellow-800 border-yellow-300";
+          } else if (image.status.kind === "generated") {
+            statusLabel = "Complete";
+            statusColor = "bg-green-100 text-green-700 border-green-200";
+          }
+
+          // Prompt is only present for generating/generated
+          const prompt =
+            image.status.kind === "generating" ||
+            image.status.kind === "generated"
+              ? image.status.prompt
+              : undefined;
 
           return (
             <div
               key={image._id}
-              className="card cursor-pointer hover:shadow-xl transition-shadow flex flex-col gap-2 group border border-[var(--color-border)]"
+              className="card cursor-pointer hover:shadow-xl transition-shadow flex flex-col gap-2 group border border-[var(--color-border)] relative"
               onClick={() =>
                 routes.image({ imageId: image._id.toString() }).push()
               }
@@ -90,6 +105,13 @@ export default function Dashboard() {
                   routes.image({ imageId: image._id.toString() }).push();
               }}
             >
+              {/* Status pill */}
+              <div
+                className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold border shadow-sm ${statusColor}`}
+              >
+                {statusLabel}
+              </div>
+              {/* Image(s) */}
               {image.status.kind === "uploading" && (
                 <div className="animate-pulse bg-gray-200 h-48 rounded-lg flex items-center justify-center w-full">
                   <span className="text-lg text-gray-500">Uploading...</span>
@@ -131,9 +153,15 @@ export default function Dashboard() {
                   />
                 </div>
               )}
-              <div className="text-xs text-gray-500 text-center font-medium mt-2">
-                {statusLabel}
-              </div>
+              {/* Prompt text */}
+              {prompt && (
+                <div
+                  className="text-xs text-gray-600 italic mt-2 truncate"
+                  title={prompt}
+                >
+                  {prompt}
+                </div>
+              )}
             </div>
           );
         })}
