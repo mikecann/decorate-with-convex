@@ -16,6 +16,7 @@
     "ai": "^4.3.10",
     "clsx": "^2.1.1",
     "convex": "1.21.1-alpha.1",
+    "convex-helpers": "^0.1.79",
     "openai": "^4.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

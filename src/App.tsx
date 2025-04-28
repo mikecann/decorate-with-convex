@@ -4,7 +4,9 @@ import { SignOutButton } from "./SignOutButton";
 import { Toaster } from "sonner";
 import { useRoute, routes } from "./routes";
 import Dashboard from "./Dashboard";
-import ImageProgressPage from "./ImageProgressPage";
+
+import { Id } from "../convex/_generated/dataModel";
+import ImagePage from "./ImagePage";
 
 export default function App() {
   const route = useRoute();
@@ -19,8 +21,8 @@ export default function App() {
       <main className="flex-1 flex flex-col p-4">
         <Authenticated>
           {route.name === "dashboard" && <Dashboard />}
-          {route.name === "imageProgress" && (
-            <ImageProgressPage imageId={route.params.imageId} />
+          {route.name === "image" && (
+            <ImagePage imageId={route.params.imageId as Id<"images">} />
           )}
         </Authenticated>
         <Unauthenticated>

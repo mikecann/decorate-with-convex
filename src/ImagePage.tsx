@@ -3,15 +3,17 @@ import { api } from "../convex/_generated/api";
 import { routes } from "./routes";
 import { useCallback, useState } from "react";
 import type { Id } from "../convex/_generated/dataModel";
-
+import { toast } from "sonner";
+import { useApiErrorHandler } from "./lib/error";
 interface ImageProgressPageProps {
-  imageId: string;
+  imageId: Id<"images">;
 }
 
-export default function ImageProgressPage({ imageId }: ImageProgressPageProps) {
+export default function ImagePage({ imageId }: ImageProgressPageProps) {
   const image = useQuery(api.images.getImage, {
-    imageId: imageId as Id<"images">,
+    imageId,
   });
+  const onApiError = useApiErrorHandler();
 
   const [prompt, setPrompt] = useState(
     "A beautiful painting in the style of Van Gogh"
@@ -32,10 +34,14 @@ export default function ImageProgressPage({ imageId }: ImageProgressPageProps) {
         "Are you sure you want to delete this image? This action cannot be undone."
       )
     ) {
-      await deleteImage({ imageId: imageId as Id<"images"> });
+      await deleteImage({ imageId: imageId as Id<"images"> }).catch(onApiError);
       routes.dashboard().push();
     }
   };
+
+  const canGenerate =
+    !!image &&
+    (image.status.kind === "uploaded" || image.status.kind === "generated");
 
   return (
     <div className="relative max-w-lg mx-auto w-full space-y-8">
@@ -115,22 +121,23 @@ export default function ImageProgressPage({ imageId }: ImageProgressPageProps) {
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="A beautiful painting in the style of Van Gogh"
-            disabled={
-              !image ||
-              (image.status.kind !== "uploaded" &&
-                image.status.kind !== "generated")
-            }
+            disabled={!canGenerate}
           />
           <button
             className="mt-4 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={
-              !image ||
-              (image.status.kind !== "uploaded" &&
-                image.status.kind !== "generated")
-            }
-            onClick={() =>
-              startGeneration({ imageId: imageId as Id<"images">, prompt })
-            }
+            disabled={!canGenerate}
+            onClick={() => {
+              if (!canGenerate) {
+                toast.error(
+                  "Please wait for the image to finish uploading before generating."
+                );
+                return;
+              }
+              startGeneration({
+                imageId: imageId as Id<"images">,
+                prompt,
+              }).catch(onApiError);
+            }}
           >
             {image && image.status.kind === "generated"
               ? "Re-generate"

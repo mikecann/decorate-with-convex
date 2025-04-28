@@ -3,20 +3,21 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { toast } from "sonner";
 import { routes } from "./routes";
+import { useApiErrorHandler } from "./lib/error";
 
 export default function Dashboard() {
   const images = useQuery(api.images.listImages) || [];
   const generateUploadUrl = useMutation(api.images.generateUploadUrl);
   const markUploaded = useMutation(api.images.markUploaded);
-  const startGeneration = useMutation(api.images.startGeneration);
   const [isDragging, setIsDragging] = useState(false);
+  const onApiError = useApiErrorHandler();
 
   const handleUpload = useCallback(
     async (file: File) => {
       try {
         const { uploadUrl, imageId } = await generateUploadUrl();
         // Navigate to progress page immediately
-        routes.imageProgress({ imageId: imageId.toString() }).push();
+        routes.image({ imageId: imageId.toString() }).push();
         const result = await fetch(uploadUrl, {
           method: "POST",
           headers: { "Content-Type": file.type },
@@ -26,36 +27,10 @@ export default function Dashboard() {
         await markUploaded({ imageId, storageId });
         toast.success("Image uploaded successfully!");
       } catch (error) {
-        toast.error("Failed to upload image");
-        console.error(error);
+        onApiError(error);
       }
     },
     [generateUploadUrl, markUploaded]
-  );
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-
-      const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith("image/")) {
-        handleUpload(file);
-      } else {
-        toast.error("Please drop an image file");
-      }
-    },
-    [handleUpload]
-  );
-
-  const handleFileSelect = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        handleUpload(file);
-      }
-    },
-    [handleUpload]
   );
 
   return (
@@ -69,7 +44,13 @@ export default function Dashboard() {
           setIsDragging(true);
         }}
         onDragLeave={() => setIsDragging(false)}
-        onDrop={handleDrop}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragging(false);
+          const file = e.dataTransfer.files[0];
+          if (file && file.type.startsWith("image/")) handleUpload(file);
+          else toast.error("Please drop an image file");
+        }}
       >
         <div className="flex flex-col items-center gap-4">
           <div className="text-4xl">📸</div>
@@ -81,7 +62,11 @@ export default function Dashboard() {
                 type="file"
                 className="hidden"
                 accept="image/*"
-                onChange={handleFileSelect}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  handleUpload(file);
+                }}
                 capture="environment"
               />
               <span className="cursor-pointer text-blue-500 hover:text-blue-600">
@@ -107,15 +92,13 @@ export default function Dashboard() {
               key={image._id}
               className="border rounded-lg p-4 space-y-4 cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() =>
-                routes.imageProgress({ imageId: image._id.toString() }).push()
+                routes.image({ imageId: image._id.toString() }).push()
               }
               tabIndex={0}
               role="button"
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ")
-                  routes
-                    .imageProgress({ imageId: image._id.toString() })
-                    .push();
+                  routes.image({ imageId: image._id.toString() }).push();
               }}
             >
               {image.status.kind === "uploading" && (

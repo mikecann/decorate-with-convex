@@ -1,17 +1,11 @@
 import { v } from "convex/values";
-import {
-  mutation,
-  query,
-  action,
-  internalQuery,
-  internalMutation,
-  internalAction,
-} from "./_generated/server";
+import { mutation, query, action, internalAction } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal } from "./_generated/api";
-import { OpenAI } from "openai";
 import { experimental_generateImage as generateImage } from "ai";
 import { openai } from "@ai-sdk/openai";
+import { ensureFP } from "../shared/ensure";
+import { vv } from "./lib";
 
 export const generateUploadUrl = mutation({
   args: {},
@@ -20,6 +14,7 @@ export const generateUploadUrl = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     const uploadUrl = await ctx.storage.generateUploadUrl();
+
     const imageId = await ctx.db.insert("images", {
       userId,
       status: { kind: "uploading" },
@@ -44,8 +39,10 @@ export const markUploaded = mutation({
     console.log(
       `[markUploaded] Marking image ${args.imageId} as uploaded with storageId ${args.storageId}`
     );
+
     await ctx.db.patch(args.imageId, {
       status: { kind: "uploaded", url },
+      originalUrl: url,
     });
   },
 });
@@ -61,6 +58,7 @@ export const startGeneration = mutation({
 
     const image = await ctx.db.get(args.imageId);
     if (!image) throw new Error(`Image with id '${args.imageId}' not found`);
+
     if (image.status.kind !== "uploaded" && image.status.kind !== "generated")
       throw new Error(
         `Image with id '${args.imageId}' not ready for generation (status: ${image.status.kind})`
@@ -68,6 +66,7 @@ export const startGeneration = mutation({
 
     const originalUrl =
       image.status.kind === "uploaded" ? image.status.url : image.originalUrl;
+
     console.log(
       `[startGeneration] Scheduling generation for image ${args.imageId} with prompt: ${args.prompt}`
     );
@@ -78,7 +77,7 @@ export const startGeneration = mutation({
 
     // Schedule the real AI generation
     await ctx.scheduler.runAfter(0, internal.images.generateDecoratedImage, {
-      imageId: args.imageId,
+      image,
       prompt: args.prompt,
     });
   },
@@ -105,12 +104,21 @@ export const mockGenerate = action({
   },
 });
 
-export const getImage = query({
+export const findImage = query({
   args: {
     imageId: v.id("images"),
   },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.imageId);
+  },
+});
+
+export const getImage = query({
+  args: {
+    imageId: v.id("images"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.imageId).then(ensureFP());
   },
 });
 
@@ -178,31 +186,39 @@ function base64ToUint8Array(base64: string): Uint8Array {
 
 export const generateDecoratedImage = internalAction({
   args: {
-    imageId: v.id("images"),
+    image: vv.doc("images"),
     prompt: v.string(),
   },
-  handler: async (ctx, { imageId, prompt }) => {
-    console.log(`[generateDecoratedImage] Starting for imageId: ${imageId}`);
-    // Get the image document
-    const image = await ctx.runQuery(api.images.getImage, { imageId });
-    if (!image || image.status.kind !== "uploaded" || !image.status.url) {
+  handler: async (ctx, { image, prompt }) => {
+    console.log(`[generateDecoratedImage] Starting for image`, image);
+
+    if (image.status.kind !== "uploaded" && image.status.kind !== "generated")
       throw new Error(
-        `Image with id '${imageId}' is not in 'uploaded' state or missing URL`
+        `Image not ready for generation (status: ${image.status.kind})`
       );
-    }
+
+    if (!image.originalUrl) throw new Error(`Image has no originalUrl`);
 
     // Fetch the uploaded image from storage
     console.log(
-      `[generateDecoratedImage] Fetching uploaded image from storage: ${image.status.url}`
+      `[generateDecoratedImage] Fetching uploaded image from storage: ${image.originalUrl}`
     );
-    const response = await fetch(image.status.url);
+    const response = await fetch(image.originalUrl);
     if (!response.ok) {
       throw new Error(
         `Failed to fetch uploaded image from storage: ${response.statusText}`
       );
     }
     const arrayBuffer = await response.arrayBuffer();
-    const base64Image = Buffer.from(arrayBuffer).toString("base64");
+    // Convert ArrayBuffer to base64 string (browser-compatible, no Buffer)
+    function arrayBufferToBase64(buffer: ArrayBuffer): string {
+      let binary = "";
+      const bytes = new Uint8Array(buffer);
+      for (let i = 0; i < bytes.byteLength; i++)
+        binary += String.fromCharCode(bytes[i]);
+      return globalThis.btoa(binary);
+    }
+    const base64Image = arrayBufferToBase64(arrayBuffer);
 
     // Generate decorated image using Vercel AI SDK and OpenAI provider
     console.log(
@@ -237,17 +253,16 @@ export const generateDecoratedImage = internalAction({
       throw new Error("Failed to get storage URL after upload");
     }
 
-    // Use the original uploaded image's URL for originalUrl
-    const originalUrl = image.status.url;
-
     console.log(
       `[generateDecoratedImage] Updating image doc with originalUrl and decoratedUrl`
     );
+
     await ctx.runMutation(api.images.finishGeneration, {
-      imageId,
-      originalUrl,
+      imageId: image._id,
+      originalUrl: image.originalUrl,
       decoratedUrl: url,
     });
-    console.log(`[generateDecoratedImage] Done for imageId: ${imageId}`);
+
+    console.log(`[generateDecoratedImage] Done for imageId: ${image._id}`);
   },
 });
