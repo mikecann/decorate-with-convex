@@ -24,6 +24,18 @@ export default function ImageProgressPage({ imageId }: ImageProgressPageProps) {
   }, []);
 
   const startGeneration = useMutation(api.images.startGeneration);
+  const deleteImage = useMutation(api.images.deleteImage);
+
+  const handleDelete = async () => {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this image? This action cannot be undone."
+      )
+    ) {
+      await deleteImage({ imageId: imageId as Id<"images"> });
+      routes.dashboard().push();
+    }
+  };
 
   return (
     <div className="relative max-w-lg mx-auto w-full space-y-8">
@@ -123,6 +135,13 @@ export default function ImageProgressPage({ imageId }: ImageProgressPageProps) {
             {image && image.status.kind === "generated"
               ? "Re-generate"
               : "Generate"}
+          </button>
+          <button
+            className="mt-2 w-full py-2 rounded-lg border border-red-200 text-red-600 bg-transparent hover:bg-red-50 transition-colors"
+            onClick={handleDelete}
+            aria-label="Delete"
+          >
+            Delete image
           </button>
         </div>
       </div>

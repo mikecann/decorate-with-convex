@@ -131,3 +131,25 @@ export const listImages = query({
       .collect();
   },
 });
+
+export const deleteImage = mutation({
+  args: {
+    imageId: v.id("images"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const image = await ctx.db.get(args.imageId);
+    if (!image) throw new Error("Image not found");
+
+    // Remove storage file if present
+    if (image.status.kind === "uploaded" && image.status.url) {
+      // Extract storageId from the url if you store it, or store storageId on the doc for easier deletion
+      // For now, skip actual storage deletion since storageId is not tracked
+    }
+    // Optionally, handle other states if you store storageId
+
+    await ctx.db.delete(args.imageId);
+  },
+});
