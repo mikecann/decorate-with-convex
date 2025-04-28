@@ -1,7 +1,7 @@
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { routes } from "./routes";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import type { Id } from "../convex/_generated/dataModel";
 
 interface ImageProgressPageProps {
@@ -12,6 +12,10 @@ export default function ImageProgressPage({ imageId }: ImageProgressPageProps) {
   const image = useQuery(api.images.getImage, {
     imageId: imageId as Id<"images">,
   });
+
+  const [prompt, setPrompt] = useState(
+    "A beautiful painting in the style of Van Gogh"
+  );
 
   const handleBack = useCallback(() => {
     routes.dashboard().push();
@@ -57,6 +61,29 @@ export default function ImageProgressPage({ imageId }: ImageProgressPageProps) {
           {image && image.status.kind === "uploaded" && "Uploaded"}
           {image && image.status.kind === "generating" && "Generating..."}
           {image && image.status.kind === "generated" && "Generation complete!"}
+        </div>
+        <div className="mt-6">
+          <label
+            htmlFor="prompt"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Image Prompt
+          </label>
+          <p className="text-xs text-gray-500 mb-2">
+            Enter a description of how you want your image to be decorated. For
+            example:{" "}
+            <span className="italic">
+              A beautiful painting in the style of Van Gogh
+            </span>
+          </p>
+          <textarea
+            id="prompt"
+            className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px] resize-y"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="A beautiful painting in the style of Van Gogh"
+            disabled={!image || image.status.kind !== "uploaded"}
+          />
         </div>
       </div>
     </div>
