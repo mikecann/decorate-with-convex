@@ -5,6 +5,8 @@ import { useCallback, useState } from "react";
 import type { Id } from "../convex/_generated/dataModel";
 import { toast } from "sonner";
 import { useApiErrorHandler } from "./lib/error";
+import { getUploadingImageObjectUrl } from "./lib/utils";
+
 interface ImageProgressPageProps {
   imageId: Id<"images">;
 }
@@ -53,11 +55,26 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
         ← Back
       </button>
       <div className="mt-12">
-        {(!image || image.status.kind === "uploading") && (
-          <div className="animate-pulse bg-gray-200 h-64 rounded-lg flex items-center justify-center">
-            <span className="text-lg text-gray-500">Uploading...</span>
-          </div>
-        )}
+        {(!image || image.status.kind === "uploading") &&
+          (() => {
+            const objectUrl = getUploadingImageObjectUrl(imageId as string);
+            return objectUrl ? (
+              <div className="relative w-full h-64">
+                <img
+                  src={objectUrl}
+                  alt="Uploading preview"
+                  className="w-full h-64 object-cover rounded-lg opacity-60"
+                />
+                <div className="absolute top-2 right-2">
+                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-t-blue-500 border-gray-200 bg-white/70"></div>
+                </div>
+              </div>
+            ) : (
+              <div className="animate-pulse bg-gray-200 h-64 rounded-lg flex items-center justify-center">
+                <span className="text-lg text-gray-500">Uploading...</span>
+              </div>
+            );
+          })()}
         {image && image.status.kind === "uploaded" && (
           <img
             src={image.status.image.url}
