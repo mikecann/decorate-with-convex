@@ -10,6 +10,8 @@ import {
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal } from "./_generated/api";
 import { OpenAI } from "openai";
+import { experimental_generateImage as generateImage } from "ai";
+import { openai } from "@ai-sdk/openai";
 
 export const generateUploadUrl = mutation({
   args: {},
@@ -39,6 +41,9 @@ export const markUploaded = mutation({
     const url = await ctx.storage.getUrl(args.storageId);
     if (!url) throw new Error("Failed to get URL");
 
+    console.log(
+      `[markUploaded] Marking image ${args.imageId} as uploaded with storageId ${args.storageId}`
+    );
     await ctx.db.patch(args.imageId, {
       status: { kind: "uploaded", url },
     });
@@ -55,12 +60,17 @@ export const startGeneration = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     const image = await ctx.db.get(args.imageId);
-    if (!image) throw new Error("Image not found");
+    if (!image) throw new Error(`Image with id '${args.imageId}' not found`);
     if (image.status.kind !== "uploaded" && image.status.kind !== "generated")
-      throw new Error("Image not ready");
+      throw new Error(
+        `Image with id '${args.imageId}' not ready for generation (status: ${image.status.kind})`
+      );
 
     const originalUrl =
       image.status.kind === "uploaded" ? image.status.url : image.originalUrl;
+    console.log(
+      `[startGeneration] Scheduling generation for image ${args.imageId} with prompt: ${args.prompt}`
+    );
     await ctx.db.patch(args.imageId, {
       originalUrl,
       status: { kind: "generating" },
@@ -166,48 +176,78 @@ function base64ToUint8Array(base64: string): Uint8Array {
   return bytes;
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export const generateDecoratedImage = internalAction({
   args: {
     imageId: v.id("images"),
     prompt: v.string(),
   },
   handler: async (ctx, { imageId, prompt }) => {
-    const response = await openai.images.generate({
-      model: "gpt-image-1",
-      prompt,
-      size: "auto",
-      n: 1,
-    });
-
-    if (
-      !response.data ||
-      response.data.length === 0 ||
-      !response.data[0].b64_json
-    ) {
-      throw new Error("No image data returned from OpenAI");
+    console.log(`[generateDecoratedImage] Starting for imageId: ${imageId}`);
+    // Get the image document
+    const image = await ctx.runQuery(api.images.getImage, { imageId });
+    if (!image || image.status.kind !== "uploaded" || !image.status.url) {
+      throw new Error(
+        `Image with id '${imageId}' is not in 'uploaded' state or missing URL`
+      );
     }
 
-    const bytes = base64ToUint8Array(response.data[0].b64_json);
+    // Fetch the uploaded image from storage
+    console.log(
+      `[generateDecoratedImage] Fetching uploaded image from storage: ${image.status.url}`
+    );
+    const response = await fetch(image.status.url);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch uploaded image from storage: ${response.statusText}`
+      );
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const base64Image = Buffer.from(arrayBuffer).toString("base64");
+
+    // Generate decorated image using Vercel AI SDK and OpenAI provider
+    console.log(
+      `[generateDecoratedImage] Calling Vercel AI SDK for image generation with prompt: ${prompt}`
+    );
+    const { image: generatedImage } = await generateImage({
+      model: openai.image("gpt-image-1"),
+      prompt,
+      n: 1,
+      size: "1024x1024",
+      providerOptions: {
+        openai: {
+          quality: "high",
+          image: { base64: base64Image, mimeType: "image/png" },
+        },
+      },
+    });
+
+    if (!generatedImage || !generatedImage.base64) {
+      throw new Error("No image data returned from Vercel AI SDK");
+    }
+
+    // Store the generated image in Convex storage
+    console.log(
+      `[generateDecoratedImage] Storing generated image in Convex storage`
+    );
+    const bytes = base64ToUint8Array(generatedImage.base64);
     const blob = new Blob([bytes], { type: "image/png" });
     const storageId = await ctx.storage.store(blob);
     const url = await ctx.storage.getUrl(storageId);
-    if (!url) throw new Error("Failed to get storage URL after upload");
+    if (!url) {
+      throw new Error("Failed to get storage URL after upload");
+    }
 
-    // Get the original image (for originalUrl)
-    const image = await ctx.runQuery(api.images.getImage, { imageId });
-    const originalUrl =
-      image?.status.kind === "uploaded"
-        ? image.status.url
-        : (image?.originalUrl ?? "");
+    // Use the original uploaded image's URL for originalUrl
+    const originalUrl = image.status.url;
 
+    console.log(
+      `[generateDecoratedImage] Updating image doc with originalUrl and decoratedUrl`
+    );
     await ctx.runMutation(api.images.finishGeneration, {
       imageId,
       originalUrl,
       decoratedUrl: url,
     });
+    console.log(`[generateDecoratedImage] Done for imageId: ${imageId}`);
   },
 });
