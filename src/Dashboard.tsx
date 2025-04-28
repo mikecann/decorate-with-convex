@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { toast } from "sonner";
+import { routes } from "./routes";
 
 export default function Dashboard() {
   const images = useQuery(api.images.listImages) || [];
@@ -10,43 +11,52 @@ export default function Dashboard() {
   const startGeneration = useMutation(api.images.startGeneration);
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleUpload = useCallback(async (file: File) => {
-    try {
-      const { uploadUrl, imageId } = await generateUploadUrl();
-      
-      const result = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-      const { storageId } = await result.json();
-      await markUploaded({ imageId, storageId });
-      
-      toast.success("Image uploaded successfully!");
-    } catch (error) {
-      toast.error("Failed to upload image");
-      console.error(error);
-    }
-  }, [generateUploadUrl, markUploaded]);
+  const handleUpload = useCallback(
+    async (file: File) => {
+      try {
+        const { uploadUrl, imageId } = await generateUploadUrl();
+        // Navigate to progress page immediately
+        routes.imageProgress({ imageId: imageId.toString() }).push();
+        const result = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+        const { storageId } = await result.json();
+        await markUploaded({ imageId, storageId });
+        toast.success("Image uploaded successfully!");
+      } catch (error) {
+        toast.error("Failed to upload image");
+        console.error(error);
+      }
+    },
+    [generateUploadUrl, markUploaded]
+  );
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith("image/")) {
-      handleUpload(file);
-    } else {
-      toast.error("Please drop an image file");
-    }
-  }, [handleUpload]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleUpload(file);
-    }
-  }, [handleUpload]);
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith("image/")) {
+        handleUpload(file);
+      } else {
+        toast.error("Please drop an image file");
+      }
+    },
+    [handleUpload]
+  );
+
+  const handleFileSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        handleUpload(file);
+      }
+    },
+    [handleUpload]
+  );
 
   return (
     <div className="max-w-4xl mx-auto w-full space-y-8">
@@ -126,7 +136,9 @@ export default function Dashboard() {
                     className="w-full h-24 object-cover rounded-lg"
                   />
                 </div>
-                <p className="text-sm text-gray-500 text-center">Generation complete!</p>
+                <p className="text-sm text-gray-500 text-center">
+                  Generation complete!
+                </p>
               </div>
             )}
           </div>
