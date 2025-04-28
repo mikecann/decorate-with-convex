@@ -5,6 +5,7 @@ import { api, internal } from "./_generated/api";
 import { ensureFP } from "../shared/ensure";
 import { vv } from "./lib";
 import OpenAI from "openai";
+import { match } from "ts-pattern";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -42,8 +43,7 @@ export const markUploaded = mutation({
     );
 
     await ctx.db.patch(args.imageId, {
-      status: { kind: "uploaded", url },
-      originalUrl: url,
+      status: { kind: "uploaded", image: { url, storageId: args.storageId } },
     });
   },
 });
@@ -65,20 +65,26 @@ export const startGeneration = mutation({
         `Image with id '${args.imageId}' not ready for generation (status: ${image.status.kind})`
       );
 
-    const originalUrl =
-      image.status.kind === "uploaded" ? image.status.url : image.originalUrl;
+    // If regenerating, delete the previous decorated image from storage
+    if (image.status.kind === "generated" && image.status.decoratedImage) {
+      await ctx.storage.delete(image.status.decoratedImage.storageId);
+    }
 
-    console.log(
-      `[startGeneration] Scheduling generation for image ${args.imageId} with prompt: ${args.prompt}`
-    );
+    // Get the image object from the current status
+    const imageObj = image.status.image;
+    if (!imageObj)
+      throw new Error(
+        `Image object missing for imageId '${args.imageId}' in startGeneration`
+      );
+
     await ctx.db.patch(args.imageId, {
-      originalUrl,
-      status: { kind: "generating" },
+      status: { kind: "generating", image: imageObj },
     });
 
-    // Schedule the real AI generation
+    // Schedule the real AI generation, passing the image object
     await ctx.scheduler.runAfter(0, internal.images.generateDecoratedImage, {
-      image,
+      imageId: args.imageId,
+      image: imageObj,
       prompt: args.prompt,
     });
   },
@@ -87,20 +93,19 @@ export const startGeneration = mutation({
 export const mockGenerate = action({
   args: {
     imageId: v.id("images"),
+    image: v.object({ url: v.string(), storageId: v.id("_storage") }),
   },
   handler: async (ctx, args) => {
     // Mock generation delay
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
-    const image = await ctx.runQuery(api.images.getImage, {
-      imageId: args.imageId,
-    });
-    if (!image || image.status.kind !== "generating") return;
-
     await ctx.runMutation(api.images.finishGeneration, {
       imageId: args.imageId,
-      originalUrl: image.originalUrl ?? "",
-      decoratedUrl: "https://picsum.photos/400/300",
+      image: args.image,
+      decoratedImage: {
+        url: "https://picsum.photos/400/300",
+        storageId: args.imageId as any,
+      }, // mock storageId
     });
   },
 });
@@ -126,15 +131,15 @@ export const getImage = query({
 export const finishGeneration = mutation({
   args: {
     imageId: v.id("images"),
-    originalUrl: v.string(),
-    decoratedUrl: v.string(),
+    image: v.object({ url: v.string(), storageId: v.id("_storage") }),
+    decoratedImage: v.object({ url: v.string(), storageId: v.id("_storage") }),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.imageId, {
       status: {
         kind: "generated",
-        originalUrl: args.originalUrl,
-        decoratedUrl: args.decoratedUrl,
+        image: args.image,
+        decoratedImage: args.decoratedImage,
       },
     });
   },
@@ -165,12 +170,23 @@ export const deleteImage = mutation({
     const image = await ctx.db.get(args.imageId);
     if (!image) throw new Error("Image not found");
 
-    // Remove storage file if present
-    if (image.status.kind === "uploaded" && image.status.url) {
-      // Extract storageId from the url if you store it, or store storageId on the doc for easier deletion
-      // For now, skip actual storage deletion since storageId is not tracked
-    }
-    // Optionally, handle other states if you store storageId
+    await match(image.status)
+      .with({ kind: "uploading" }, async () => {
+        // No storage to delete
+      })
+      .with({ kind: "uploaded" }, async ({ image }) => {
+        if (!image) return;
+        await ctx.storage.delete(image.storageId);
+      })
+      .with({ kind: "generating" }, async ({ image }) => {
+        if (!image) return;
+        await ctx.storage.delete(image.storageId);
+      })
+      .with({ kind: "generated" }, async ({ image, decoratedImage }) => {
+        if (image) await ctx.storage.delete(image.storageId);
+        if (decoratedImage) await ctx.storage.delete(decoratedImage.storageId);
+      })
+      .exhaustive();
 
     await ctx.db.delete(args.imageId);
   },
@@ -178,27 +194,22 @@ export const deleteImage = mutation({
 
 export const generateDecoratedImage = internalAction({
   args: {
-    image: vv.doc("images"),
+    imageId: v.id("images"),
+    image: v.object({ url: v.string(), storageId: v.id("_storage") }),
     prompt: v.string(),
   },
-  handler: async (ctx, { image, prompt }) => {
+  handler: async (ctx, { imageId, image, prompt }) => {
     console.log(`[generateDecoratedImage] Starting for image`, {
+      imageId,
       image,
       prompt,
     });
 
-    if (image.status.kind !== "uploaded" && image.status.kind !== "generated")
-      throw new Error(
-        `Image not ready for generation (status: ${image.status.kind})`
-      );
-
-    if (!image.originalUrl) throw new Error(`Image has no originalUrl`);
-
     // Fetch the uploaded image from storage
     console.log(
-      `[generateDecoratedImage] Fetching uploaded image from storage: ${image.originalUrl}`
+      `[generateDecoratedImage] Fetching uploaded image from storage: ${image.url}`
     );
-    const response = await fetch(image.originalUrl);
+    const response = await fetch(image.url);
     if (!response.ok) {
       throw new Error(
         `Failed to fetch uploaded image from storage: ${response.statusText}`
@@ -247,16 +258,12 @@ export const generateDecoratedImage = internalAction({
       throw new Error("Failed to get storage URL after upload");
     }
 
-    console.log(
-      `[generateDecoratedImage] Updating image doc with originalUrl and decoratedUrl`
-    );
-
     await ctx.runMutation(api.images.finishGeneration, {
-      imageId: image._id,
-      originalUrl: image.originalUrl,
-      decoratedUrl: url,
+      imageId,
+      image,
+      decoratedImage: { url, storageId },
     });
 
-    console.log(`[generateDecoratedImage] Done for imageId: ${image._id}`);
+    console.log(`[generateDecoratedImage] Done for imageId: ${imageId}`);
   },
 });

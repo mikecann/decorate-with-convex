@@ -2,33 +2,33 @@ import { defineSchema, defineTable } from "convex/server";
 import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
-const applicationTables = {
+// Extracted validator for an image object with url and storageId
+const imageObject = v.object({
+  url: v.string(),
+  storageId: v.id("_storage"),
+});
+
+export default defineSchema({
+  ...authTables,
   images: defineTable({
     userId: v.id("users"),
-    originalUrl: v.optional(v.string()),
-    decoratedUrl: v.optional(v.string()),
     status: v.union(
       v.object({
         kind: v.literal("uploading"),
       }),
       v.object({
         kind: v.literal("uploaded"),
-        url: v.string(),
+        image: imageObject,
       }),
       v.object({
         kind: v.literal("generating"),
+        image: imageObject,
       }),
       v.object({
         kind: v.literal("generated"),
-        originalUrl: v.string(),
-        decoratedUrl: v.string(),
+        image: imageObject,
+        decoratedImage: imageObject,
       })
     ),
-  })
-    .index("by_user", ["userId"])
-};
-
-export default defineSchema({
-  ...authTables,
-  ...applicationTables,
+  }).index("by_user", ["userId"]),
 });

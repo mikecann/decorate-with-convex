@@ -60,7 +60,7 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
         )}
         {image && image.status.kind === "uploaded" && (
           <img
-            src={image.status.url}
+            src={image.status.image.url}
             alt="Uploaded"
             className="w-full h-64 object-cover rounded-lg"
           />
@@ -84,7 +84,9 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
           >
             <img
               src={
-                previewOriginal ? image.originalUrl : image.status.decoratedUrl
+                previewOriginal
+                  ? image.status.image.url
+                  : image.status.decoratedImage.url
               }
               alt={previewOriginal ? "Original" : "Decorated"}
               className="w-full h-64 object-cover rounded-lg transition-opacity duration-200"

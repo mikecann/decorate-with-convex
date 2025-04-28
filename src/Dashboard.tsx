@@ -108,7 +108,7 @@ export default function Dashboard() {
               )}
               {image.status.kind === "uploaded" && (
                 <img
-                  src={image.status.url}
+                  src={image.status.image.url}
                   alt="Original"
                   className="w-full h-48 object-cover rounded-lg"
                 />
@@ -124,12 +124,12 @@ export default function Dashboard() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-2">
                     <img
-                      src={image.status.originalUrl}
+                      src={image.status.image.url}
                       alt="Original"
                       className="w-full h-24 object-cover rounded-lg"
                     />
                     <img
-                      src={image.status.decoratedUrl}
+                      src={image.status.decoratedImage.url}
                       alt="Decorated"
                       className="w-full h-24 object-cover rounded-lg"
                     />
