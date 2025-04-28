@@ -77,7 +77,7 @@ export const startGeneration = mutation({
       );
 
     await ctx.db.patch(args.imageId, {
-      status: { kind: "generating", image: imageObj },
+      status: { kind: "generating", image: imageObj, prompt: args.prompt },
     });
 
     // Schedule the real AI generation, passing the image object
@@ -112,6 +112,7 @@ export const finishGeneration = mutation({
     imageId: v.id("images"),
     image: v.object({ url: v.string(), storageId: v.id("_storage") }),
     decoratedImage: v.object({ url: v.string(), storageId: v.id("_storage") }),
+    prompt: v.string(),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.imageId, {
@@ -119,6 +120,7 @@ export const finishGeneration = mutation({
         kind: "generated",
         image: args.image,
         decoratedImage: args.decoratedImage,
+        prompt: args.prompt,
       },
     });
   },
@@ -238,6 +240,7 @@ export const generateDecoratedImage = internalAction({
         imageId,
         image,
         decoratedImage: { url, storageId },
+        prompt,
       });
     } catch (e) {
       console.error(e);

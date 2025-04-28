@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { routes } from "./routes";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
 import type { Id } from "../convex/_generated/dataModel";
 import { toast } from "sonner";
 import { useApiErrorHandler } from "./lib/error";
@@ -21,7 +21,15 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
     "A beautiful painting in the style of Van Gogh"
   );
 
+  const promptFromStatus =
+    image &&
+    (image.status.kind === "generating" || image.status.kind === "generated")
+      ? image.status.prompt
+      : undefined;
+
   const [previewOriginal, setPreviewOriginal] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const tooltipTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const handleBack = useCallback(() => {
     routes.dashboard().push();
@@ -46,103 +54,39 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
     (image.status.kind === "uploaded" || image.status.kind === "generated");
 
   return (
-    <div className="relative max-w-lg mx-auto w-full space-y-8">
+    <div className="relative flex flex-col-reverse md:flex-row flex-1 w-full bg-[var(--color-bg)]">
       <button
-        className="absolute top-4 left-4 z-20 bg-white rounded-full shadow p-2 text-gray-700 hover:bg-gray-100"
+        className="absolute -top-3 left-4 z-20 bg-white rounded-full shadow p-2 text-gray-700 hover:bg-gray-100"
         onClick={handleBack}
         aria-label="Back"
       >
         ← Back
       </button>
-      <div className="mt-12">
-        {(!image || image.status.kind === "uploading") &&
-          (() => {
-            const objectUrl = getUploadingImageObjectUrl(imageId as string);
-            return objectUrl ? (
-              <div className="relative w-full h-64">
-                <img
-                  src={objectUrl}
-                  alt="Uploading preview"
-                  className="w-full h-64 object-cover rounded-lg opacity-60"
-                />
-                <div className="absolute top-2 right-2">
-                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-t-blue-500 border-gray-200 bg-white/70"></div>
-                </div>
-              </div>
-            ) : (
-              <div className="animate-pulse bg-gray-200 h-64 rounded-lg flex items-center justify-center">
-                <span className="text-lg text-gray-500">Uploading...</span>
-              </div>
-            );
-          })()}
-        {image && image.status.kind === "uploaded" && (
-          <img
-            src={image.status.image.url}
-            alt="Uploaded"
-            className="w-full h-64 object-cover rounded-lg"
-          />
-        )}
-        {image && image.status.kind === "generating" && (
-          <div className="flex flex-col items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
-            <span className="text-lg text-gray-500">Generating...</span>
-          </div>
-        )}
-        {image && image.status.kind === "generated" && (
-          <div
-            className="relative w-full h-64"
-            onMouseEnter={() => setPreviewOriginal(true)}
-            onMouseLeave={() => setPreviewOriginal(false)}
-            onPointerDown={() => setPreviewOriginal(true)}
-            onPointerUp={() => setPreviewOriginal(false)}
-            onPointerCancel={() => setPreviewOriginal(false)}
-            tabIndex={0}
-            aria-label="Hold or hover to preview original image"
-          >
-            <img
-              src={
-                previewOriginal
-                  ? image.status.image.url
-                  : image.status.decoratedImage.url
-              }
-              alt={previewOriginal ? "Original" : "Decorated"}
-              className="w-full h-64 object-cover rounded-lg transition-opacity duration-200"
-            />
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-              {previewOriginal ? "Original" : "Decorated"} (hold or hover to
-              preview original)
-            </div>
-          </div>
-        )}
-        <div className="text-sm text-gray-500 text-center font-medium mt-4">
-          {(!image || image.status.kind === "uploading") && "Uploading..."}
-          {image && image.status.kind === "uploaded" && "Uploaded"}
-          {image && image.status.kind === "generating" && "Generating..."}
-          {image && image.status.kind === "generated" && "Generation complete!"}
-        </div>
-        <div className="mt-6">
-          <label
-            htmlFor="prompt"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
+      {/* Left: Prompt & Controls */}
+      <div className="flex flex-col justify-between w-full md:w-1/2 max-w-xl bg-white rounded-none md:rounded-r-3xl shadow-lg p-8 md:p-12 overflow-y-auto min-h-[320px] border-r border-[var(--color-border)]">
+        <div>
+          <h2 className="text-2xl font-bold mb-4 text-slate-800">
             Image Prompt
-          </label>
-          <p className="text-xs text-gray-500 mb-2">
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">
             Enter a description of how you want your image to be decorated. For
-            example:{" "}
-            <span className="italic">
+            example:
+            <span className="italic block mt-1">
               A beautiful painting in the style of Van Gogh
             </span>
           </p>
           <textarea
             id="prompt"
-            className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px] resize-y"
-            value={prompt}
+            className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[200px] resize-y text-base mb-4 shadow-sm"
+            value={promptFromStatus ?? prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="A beautiful painting in the style of Van Gogh"
+            disabled={image && image.status.kind === "generating"}
           />
+        </div>
+        <div className="flex flex-col gap-2 mt-4">
           <button
-            className="mt-4 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold text-lg shadow hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!canGenerate}
             onClick={() => {
               if (!canGenerate) {
@@ -162,12 +106,167 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
               : "Generate"}
           </button>
           <button
-            className="mt-2 w-full py-2 rounded-lg border border-red-200 text-red-600 bg-transparent hover:bg-red-50 transition-colors"
+            className="w-full py-2 rounded-lg border border-red-200 text-red-600 bg-transparent hover:bg-red-50 transition-colors font-semibold"
             onClick={handleDelete}
             aria-label="Delete"
           >
             Delete image
           </button>
+        </div>
+      </div>
+      {/* Right: Image Area */}
+      <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-white min-h-[320px] relative overflow-hidden">
+        <div className="flex flex-col items-center justify-center w-full h-full p-4 md:p-8">
+          {(!image || image.status.kind === "uploading") &&
+            (() => {
+              const objectUrl = getUploadingImageObjectUrl(imageId as string);
+              return objectUrl ? (
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <div className="bg-white/80 border border-[var(--color-border)] rounded-2xl shadow-xl flex items-center justify-center w-full h-full p-4">
+                    <img
+                      src={objectUrl}
+                      alt="Uploading preview"
+                      className="max-h-[60vh] max-w-full object-contain rounded-xl shadow-md opacity-60 transition-all duration-300"
+                    />
+                    <div className="absolute top-4 right-4">
+                      <div className="animate-spin rounded-full h-10 w-10 border-4 border-t-blue-500 border-gray-200 bg-white/70"></div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="animate-pulse bg-gray-200 h-80 w-full rounded-2xl flex items-center justify-center">
+                  <span className="text-lg text-gray-500">Uploading...</span>
+                </div>
+              );
+            })()}
+          {image && image.status.kind === "uploaded" && (
+            <div className="relative w-full h-full flex items-center justify-center">
+              <div className="bg-white/80 border border-[var(--color-border)] rounded-2xl shadow-xl flex items-center justify-center w-full h-full p-4">
+                <img
+                  src={image.status.image.url}
+                  alt="Uploaded"
+                  className="max-h-[60vh] max-w-full object-contain rounded-xl shadow-md transition-all duration-300"
+                />
+                {/* Subtle info icon for hover/click */}
+                <div className="absolute top-4 left-4">
+                  <button
+                    className="group relative"
+                    onMouseEnter={() => {
+                      if (tooltipTimeout.current)
+                        clearTimeout(tooltipTimeout.current);
+                      setShowTooltip(true);
+                    }}
+                    onMouseLeave={() => {
+                      tooltipTimeout.current = setTimeout(
+                        () => setShowTooltip(false),
+                        200
+                      );
+                    }}
+                    onFocus={() => setShowTooltip(true)}
+                    onBlur={() => setShowTooltip(false)}
+                    aria-label="Info about preview"
+                  >
+                    <span className="text-blue-400 text-xl bg-white/80 rounded-full p-1 shadow-sm border border-[var(--color-border)]">
+                      ⓘ
+                    </span>
+                    {showTooltip && (
+                      <span className="absolute left-8 top-1/2 -translate-y-1/2 bg-white/90 text-xs text-gray-600 rounded-lg shadow px-3 py-2 z-20 fade-in border border-[var(--color-border)] min-w-[180px]">
+                        Hold or hover the image after generation to compare the
+                        original and decorated versions.
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {image && image.status.kind === "generating" && (
+            <div className="relative w-full h-full flex items-center justify-center">
+              <div className="bg-white/80 border border-[var(--color-border)] rounded-2xl shadow-xl flex items-center justify-center w-full h-full p-4">
+                <img
+                  src={image.status.image.url}
+                  alt="Original"
+                  className="max-h-[60vh] max-w-full object-contain rounded-xl shadow-md transition-all duration-300"
+                />
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm rounded-2xl z-10">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-gray-200 mb-4 bg-white/80"></div>
+                  <span className="text-xl text-gray-700 font-semibold mb-2">
+                    Generating...
+                  </span>
+                  {promptFromStatus && (
+                    <span className="text-base text-gray-600 text-center px-2">
+                      Prompt: <span className="italic">{promptFromStatus}</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          {image && image.status.kind === "generated" && (
+            <div
+              className="relative w-full h-full flex items-center justify-center"
+              onMouseEnter={() => setPreviewOriginal(true)}
+              onMouseLeave={() => setPreviewOriginal(false)}
+              onPointerDown={() => setPreviewOriginal(true)}
+              onPointerUp={() => setPreviewOriginal(false)}
+              onPointerCancel={() => setPreviewOriginal(false)}
+              tabIndex={0}
+              aria-label="Hold or hover to preview original image"
+            >
+              <div className="bg-white/80 border border-[var(--color-border)] rounded-2xl shadow-xl flex items-center justify-center w-full h-full p-4 transition-all duration-300">
+                <img
+                  src={
+                    previewOriginal
+                      ? image.status.image.url
+                      : image.status.decoratedImage.url
+                  }
+                  alt={previewOriginal ? "Original" : "Decorated"}
+                  className="max-h-[60vh] max-w-full object-contain rounded-xl shadow-md transition-opacity duration-200"
+                />
+                {/* Subtle info icon for hover/click */}
+                <div className="absolute top-4 left-4">
+                  <button
+                    className="group relative"
+                    onMouseEnter={() => {
+                      if (tooltipTimeout.current)
+                        clearTimeout(tooltipTimeout.current);
+                      setShowTooltip(true);
+                    }}
+                    onMouseLeave={() => {
+                      tooltipTimeout.current = setTimeout(
+                        () => setShowTooltip(false),
+                        200
+                      );
+                    }}
+                    onFocus={() => setShowTooltip(true)}
+                    onBlur={() => setShowTooltip(false)}
+                    aria-label="Info about preview"
+                  >
+                    <span className="text-blue-400 text-xl bg-white/80 rounded-full p-1 shadow-sm border border-[var(--color-border)]">
+                      ⓘ
+                    </span>
+                    {showTooltip && (
+                      <span className="absolute left-8 top-1/2 -translate-y-1/2 bg-white/90 text-xs text-gray-600 rounded-lg shadow px-3 py-2 z-20 fade-in border border-[var(--color-border)] min-w-[180px]">
+                        Hold or hover the image to compare the original and
+                        decorated versions.
+                      </span>
+                    )}
+                  </button>
+                </div>
+                {/* Pill badge for prompt */}
+                {promptFromStatus && (
+                  <div className="absolute bottom-4 right-4 bg-blue-100 text-blue-700 text-xs font-medium px-4 py-2 rounded-full shadow-sm border border-blue-200">
+                    <span className="font-semibold">Prompt:</span>{" "}
+                    <span className="italic">{promptFromStatus}</span>
+                  </div>
+                )}
+                {/* Subtle overlay for preview state */}
+                {previewOriginal && (
+                  <div className="absolute inset-0 bg-black/10 rounded-2xl pointer-events-none transition-all duration-200" />
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

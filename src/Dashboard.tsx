@@ -7,6 +7,7 @@ import { useApiErrorHandler } from "./lib/error";
 import {
   setUploadingImageObjectUrl,
   clearUploadingImageObjectUrl,
+  useImageUpload,
 } from "./lib/utils";
 
 export default function Dashboard() {
@@ -15,38 +16,15 @@ export default function Dashboard() {
   const markUploaded = useMutation(api.images.markUploaded);
   const [isDragging, setIsDragging] = useState(false);
   const onApiError = useApiErrorHandler();
-
-  const handleUpload = useCallback(
-    async (file: File) => {
-      try {
-        const { uploadUrl, imageId } = await generateUploadUrl();
-        // Store object URL for use in ImagePage
-        const objectUrl = URL.createObjectURL(file);
-        setUploadingImageObjectUrl(imageId, objectUrl);
-        // Navigate to progress page immediately
-        routes.image({ imageId: imageId.toString() }).push();
-        const result = await fetch(uploadUrl, {
-          method: "POST",
-          headers: { "Content-Type": file.type },
-          body: file,
-        });
-        const { storageId } = await result.json();
-        await markUploaded({ imageId, storageId });
-        // Clear object URL after upload is complete
-        clearUploadingImageObjectUrl(imageId);
-        toast.success("Image uploaded successfully!");
-      } catch (error) {
-        onApiError(error);
-      }
-    },
-    [generateUploadUrl, markUploaded]
-  );
+  const handleUpload = useImageUpload();
 
   return (
-    <div className="max-w-4xl mx-auto w-full space-y-8">
+    <div className="max-w-6xl mx-auto w-full space-y-10">
       <div
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-          isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300"
+        className={`card border-2 border-dashed p-10 text-center transition-colors flex flex-col items-center justify-center mb-8 ${
+          isDragging
+            ? "border-blue-400 bg-blue-50"
+            : "border-[var(--color-border)] bg-white"
         }`}
         onDragOver={(e) => {
           e.preventDefault();
@@ -62,11 +40,15 @@ export default function Dashboard() {
         }}
       >
         <div className="flex flex-col items-center gap-4">
-          <div className="text-4xl">📸</div>
+          <div className="text-5xl text-blue-400 mb-2">📸</div>
           <div>
-            <p className="text-lg font-medium">Drop your image here</p>
-            <p className="text-sm text-gray-500">or</p>
-            <label className="mt-2 inline-block">
+            <p className="text-2xl font-bold text-slate-800 mb-1">
+              Upload your image
+            </p>
+            <p className="text-base text-gray-500 mb-2">
+              Drag & drop or select a file to get started
+            </p>
+            <label className="mt-2 inline-block cursor-pointer">
               <input
                 type="file"
                 className="hidden"
@@ -78,15 +60,13 @@ export default function Dashboard() {
                 }}
                 capture="environment"
               />
-              <span className="cursor-pointer text-blue-500 hover:text-blue-600">
-                Select a file
-              </span>
+              <span className="button px-6 py-2">Select a file</span>
             </label>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {images.map((image) => {
           let statusLabel = "";
           if (image.status.kind === "uploading") statusLabel = "Uploading...";
@@ -99,7 +79,7 @@ export default function Dashboard() {
           return (
             <div
               key={image._id}
-              className="border rounded-lg p-4 space-y-4 cursor-pointer hover:shadow-lg transition-shadow"
+              className="card cursor-pointer hover:shadow-xl transition-shadow flex flex-col gap-2 group border border-[var(--color-border)]"
               onClick={() =>
                 routes.image({ imageId: image._id.toString() }).push()
               }
@@ -111,8 +91,8 @@ export default function Dashboard() {
               }}
             >
               {image.status.kind === "uploading" && (
-                <div className="animate-pulse bg-gray-200 h-48 rounded-lg flex items-center justify-center">
-                  Uploading...
+                <div className="animate-pulse bg-gray-200 h-48 rounded-lg flex items-center justify-center w-full">
+                  <span className="text-lg text-gray-500">Uploading...</span>
                 </div>
               )}
               {image.status.kind === "uploaded" && (
@@ -123,29 +103,35 @@ export default function Dashboard() {
                 />
               )}
               {image.status.kind === "generating" && (
-                <div className="space-y-4">
-                  <div className="animate-pulse bg-gray-200 h-48 rounded-lg flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <div className="relative w-full h-48 flex items-center justify-center">
+                  <img
+                    src={image.status.image.url}
+                    alt="Original"
+                    className="w-full h-48 object-cover rounded-lg opacity-60"
+                  />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 rounded-lg z-10">
+                    <div className="animate-spin rounded-full h-8 w-8 border-4 border-t-blue-400 border-gray-200 mb-2 bg-white/70"></div>
+                    <span className="text-sm text-white font-semibold">
+                      Generating...
+                    </span>
                   </div>
                 </div>
               )}
               {image.status.kind === "generated" && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-2">
-                    <img
-                      src={image.status.image.url}
-                      alt="Original"
-                      className="w-full h-24 object-cover rounded-lg"
-                    />
-                    <img
-                      src={image.status.decoratedImage.url}
-                      alt="Decorated"
-                      className="w-full h-24 object-cover rounded-lg"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <img
+                    src={image.status.image.url}
+                    alt="Original"
+                    className="w-full h-24 object-cover rounded-lg"
+                  />
+                  <img
+                    src={image.status.decoratedImage.url}
+                    alt="Decorated"
+                    className="w-full h-24 object-cover rounded-lg"
+                  />
                 </div>
               )}
-              <div className="text-sm text-gray-500 text-center font-medium mt-2">
+              <div className="text-xs text-gray-500 text-center font-medium mt-2">
                 {statusLabel}
               </div>
             </div>
