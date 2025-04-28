@@ -203,56 +203,29 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
               aria-label="Hold or hover to preview original image"
             >
               <div className="rounded-2xl flex items-center justify-center w-full h-full p-4 transition-all duration-300">
-                <img
-                  src={
-                    previewOriginal
-                      ? image.status.image.url
-                      : image.status.decoratedImage.url
-                  }
-                  alt={previewOriginal ? "Original" : "Decorated"}
-                  className="max-h-[60vh] max-w-full object-contain rounded-xl shadow-md transition-opacity duration-200"
-                />
-                {/* Subtle info icon for hover/click */}
-                <div className="absolute top-4 left-4">
-                  <button
-                    className="group relative"
-                    onMouseEnter={() => {
-                      if (tooltipTimeout.current)
-                        clearTimeout(tooltipTimeout.current);
-                      setShowTooltip(true);
-                    }}
-                    onMouseLeave={() => {
-                      tooltipTimeout.current = setTimeout(
-                        () => setShowTooltip(false),
-                        200
-                      );
-                    }}
-                    onFocus={() => setShowTooltip(true)}
-                    onBlur={() => setShowTooltip(false)}
-                    aria-label="Info about preview"
-                  >
-                    <span className="text-blue-400 text-xl bg-white/80 rounded-full p-1 shadow-sm border border-[var(--color-border)]">
-                      ⓘ
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <div className="relative">
+                    {/* Inline label inside image */}
+                    <span className="absolute top-2 left-2 bg-white/80 text-xs font-bold text-gray-700 px-2 py-0.5 rounded shadow-sm border border-gray-200 select-none z-10">
+                      {previewOriginal ? "Original" : "Decorated"}
                     </span>
-                    {showTooltip && (
-                      <span className="absolute left-8 top-1/2 -translate-y-1/2 bg-white/90 text-xs text-gray-600 rounded-lg shadow px-3 py-2 z-20 fade-in border border-[var(--color-border)] min-w-[180px]">
-                        Hold or hover the image to compare the original and
-                        decorated versions.
-                      </span>
+                    <img
+                      src={
+                        previewOriginal
+                          ? image.status.image.url
+                          : image.status.decoratedImage.url
+                      }
+                      alt={previewOriginal ? "Original" : "Decorated"}
+                      className="max-h-[60vh] max-w-full object-contain rounded-md shadow-md transition-opacity duration-200"
+                    />
+                    {/* Pill badge for prompt */}
+                    {promptFromStatus && (
+                      <div className="text-xs text-center font-medium px-4 py-2">
+                        <span className="italic">{promptFromStatus}</span>
+                      </div>
                     )}
-                  </button>
-                </div>
-                {/* Pill badge for prompt */}
-                {promptFromStatus && (
-                  <div className="absolute bottom-4 right-4 bg-blue-100 text-blue-700 text-xs font-medium px-4 py-2 rounded-full shadow-sm border border-blue-200">
-                    <span className="font-semibold">Prompt:</span>{" "}
-                    <span className="italic">{promptFromStatus}</span>
                   </div>
-                )}
-                {/* Subtle overlay for preview state */}
-                {previewOriginal && (
-                  <div className="absolute inset-0 bg-black/10 rounded-2xl pointer-events-none transition-all duration-200" />
-                )}
+                </div>
               </div>
             </div>
           )}
