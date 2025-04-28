@@ -29,11 +29,21 @@ export default function App() {
       <Authenticated>
         <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-md p-4 flex justify-between items-center border-b border-[var(--color-border)] shadow-sm">
           <div className="flex items-center">
-            <img
-              src="/logo.png"
-              alt="Logo"
-              className="h-10 w-auto max-w-[180px]"
-            />
+            {route.name === "image" ? (
+              <button
+                className="bg-white rounded-full shadow p-2 text-gray-700 hover:bg-gray-100 flex items-center"
+                onClick={() => routes.dashboard().push()}
+                aria-label="Back"
+              >
+                <span className="text-xl mr-1">←</span> Back
+              </button>
+            ) : (
+              <img
+                src="/logo.png"
+                alt="Logo"
+                className="h-10 w-auto max-w-[180px]"
+              />
+            )}
           </div>
           <SignOutButton />
         </header>

@@ -31,10 +31,6 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const tooltipTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  const handleBack = useCallback(() => {
-    routes.dashboard().push();
-  }, []);
-
   const startGeneration = useMutation(api.images.startGeneration);
   const deleteImage = useMutation(api.images.deleteImage);
 
@@ -55,13 +51,6 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
 
   return (
     <div className="relative flex flex-col-reverse md:flex-row flex-1 w-full bg-[var(--color-bg)]">
-      <button
-        className="absolute -top-3 left-4 z-20 bg-white rounded-full shadow p-2 text-gray-700 hover:bg-gray-100"
-        onClick={handleBack}
-        aria-label="Back"
-      >
-        ← Back
-      </button>
       {/* Left: Prompt & Controls */}
       <div className="flex flex-col justify-between w-full md:w-1/2 max-w-xl bg-white rounded-none md:rounded-r-3xl shadow-lg p-8 md:p-12 overflow-y-auto min-h-[320px] border-r border-[var(--color-border)]">
         <div>
