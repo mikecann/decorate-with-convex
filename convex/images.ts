@@ -2,10 +2,11 @@ import { v } from "convex/values";
 import { mutation, query, action, internalAction } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal } from "./_generated/api";
-import { experimental_generateImage as generateImage } from "ai";
-import { openai } from "@ai-sdk/openai";
 import { ensureFP } from "../shared/ensure";
 import { vv } from "./lib";
+import OpenAI from "openai";
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export const generateUploadUrl = mutation({
   args: {},
@@ -175,22 +176,16 @@ export const deleteImage = mutation({
   },
 });
 
-// Helper to convert base64 to Uint8Array (Convex-compatible)
-function base64ToUint8Array(base64: string): Uint8Array {
-  const binaryString = globalThis.atob(base64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
-  return bytes;
-}
-
 export const generateDecoratedImage = internalAction({
   args: {
     image: vv.doc("images"),
     prompt: v.string(),
   },
   handler: async (ctx, { image, prompt }) => {
-    console.log(`[generateDecoratedImage] Starting for image`, image);
+    console.log(`[generateDecoratedImage] Starting for image`, {
+      image,
+      prompt,
+    });
 
     if (image.status.kind !== "uploaded" && image.status.kind !== "generated")
       throw new Error(
@@ -210,42 +205,41 @@ export const generateDecoratedImage = internalAction({
       );
     }
     const arrayBuffer = await response.arrayBuffer();
-    // Convert ArrayBuffer to base64 string (browser-compatible, no Buffer)
-    function arrayBufferToBase64(buffer: ArrayBuffer): string {
-      let binary = "";
-      const bytes = new Uint8Array(buffer);
-      for (let i = 0; i < bytes.byteLength; i++)
-        binary += String.fromCharCode(bytes[i]);
-      return globalThis.btoa(binary);
-    }
-    const base64Image = arrayBufferToBase64(arrayBuffer);
+    // Convert ArrayBuffer to Uint8Array for OpenAI SDK
+    const imageBytes = new Uint8Array(arrayBuffer);
+    // Create a File object for OpenAI SDK (Node.js polyfill)
+    const imageFile = new File([imageBytes], "input.png", {
+      type: "image/png",
+    });
 
-    // Generate decorated image using Vercel AI SDK and OpenAI provider
+    // Call OpenAI image edit endpoint
     console.log(
-      `[generateDecoratedImage] Calling Vercel AI SDK for image generation with prompt: ${prompt}`
+      `[generateDecoratedImage] Calling OpenAI image edit endpoint with prompt: ${prompt}`
     );
-    const { image: generatedImage } = await generateImage({
-      model: openai.image("gpt-image-1"),
+    const editResponse = await openai.images.edit({
+      image: imageFile,
+      model: "gpt-image-1",
       prompt,
       n: 1,
       size: "1024x1024",
-      providerOptions: {
-        openai: {
-          quality: "high",
-          image: { base64: base64Image, mimeType: "image/png" },
-        },
-      },
     });
 
-    if (!generatedImage || !generatedImage.base64) {
-      throw new Error("No image data returned from Vercel AI SDK");
+    if (!editResponse.data || !editResponse.data[0].b64_json) {
+      throw new Error("No image data returned from OpenAI image edit endpoint");
     }
 
     // Store the generated image in Convex storage
     console.log(
       `[generateDecoratedImage] Storing generated image in Convex storage`
     );
-    const bytes = base64ToUint8Array(generatedImage.base64);
+    const base64ToUint8Array = (base64: string): Uint8Array => {
+      const binaryString = globalThis.atob(base64);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+      return bytes;
+    };
+    const bytes = base64ToUint8Array(editResponse.data[0].b64_json);
     const blob = new Blob([bytes], { type: "image/png" });
     const storageId = await ctx.storage.store(blob);
     const url = await ctx.storage.getUrl(storageId);
