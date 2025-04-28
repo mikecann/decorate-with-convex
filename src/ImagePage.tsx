@@ -50,9 +50,9 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
     (image.status.kind === "uploaded" || image.status.kind === "generated");
 
   return (
-    <div className="relative flex flex-col-reverse md:flex-row flex-1 w-full bg-[var(--color-bg)]">
+    <div className="relative flex flex-col-reverse md:flex-row flex-1 w-full bg-[var(--color-bg)] ">
       {/* Left: Prompt & Controls */}
-      <div className="flex flex-col justify-between w-full md:w-1/2 max-w-xl bg-white rounded-none md:rounded-r-3xl shadow-lg p-8 md:p-12 overflow-y-auto min-h-[320px] border-r border-[var(--color-border)]">
+      <div className="flex flex-col justify-between w-full md:w-1/2 max-w-xl bg-white r p-8 md:p-12 overflow-y-auto min-h-[320px] border-r border-[var(--color-border)]">
         <div>
           <h2 className="text-2xl font-bold mb-4 text-slate-800">
             Image Prompt
@@ -104,7 +104,7 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
         </div>
       </div>
       {/* Right: Image Area */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-white min-h-[320px] relative overflow-hidden">
+      <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br  min-h-[320px] relative overflow-hidden">
         <div className="flex flex-col items-center justify-center w-full h-full p-4 md:p-8">
           {(!image || image.status.kind === "uploading") &&
             (() => {

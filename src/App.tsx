@@ -48,7 +48,7 @@ export default function App() {
           <SignOutButton />
         </header>
       </Authenticated>
-      <main className="flex-1 flex flex-col p-4 md:p-8 pb-20 md:pb-0">
+      <main className="flex-1 flex flex-col">
         <Authenticated>
           {route.name === "dashboard" && <Dashboard />}
           {route.name === "image" && (
