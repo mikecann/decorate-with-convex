@@ -1,5 +1,11 @@
 import { v } from "convex/values";
-import { mutation, query, action, internalQuery, internalMutation } from "./_generated/server";
+import {
+  mutation,
+  query,
+  action,
+  internalQuery,
+  internalMutation,
+} from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal } from "./_generated/api";
 
@@ -8,13 +14,13 @@ export const generateUploadUrl = mutation({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
-    
+
     const uploadUrl = await ctx.storage.generateUploadUrl();
     const imageId = await ctx.db.insert("images", {
       userId,
       status: { kind: "uploading" },
     });
-    
+
     return { uploadUrl, imageId };
   },
 });
@@ -47,14 +53,21 @@ export const startGeneration = mutation({
 
     const image = await ctx.db.get(args.imageId);
     if (!image) throw new Error("Image not found");
-    if (image.status.kind !== "uploaded") throw new Error("Image not ready");
+    if (image.status.kind !== "uploaded" && image.status.kind !== "generated")
+      throw new Error("Image not ready");
 
+    // Store the original URL on the document for later use
+    const originalUrl =
+      image.status.kind === "uploaded" ? image.status.url : image.originalUrl;
     await ctx.db.patch(args.imageId, {
+      originalUrl,
       status: { kind: "generating" },
     });
 
     // Schedule the mock generation
-    await ctx.scheduler.runAfter(0, api.images.mockGenerate, { imageId: args.imageId });
+    await ctx.scheduler.runAfter(0, api.images.mockGenerate, {
+      imageId: args.imageId,
+    });
   },
 });
 
@@ -64,14 +77,16 @@ export const mockGenerate = action({
   },
   handler: async (ctx, args) => {
     // Mock generation delay
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
-    const image = await ctx.runQuery(api.images.getImage, { imageId: args.imageId });
-    if (!image || image.status.kind !== "uploaded") return;
+    const image = await ctx.runQuery(api.images.getImage, {
+      imageId: args.imageId,
+    });
+    if (!image || image.status.kind !== "generating") return;
 
     await ctx.runMutation(api.images.finishGeneration, {
       imageId: args.imageId,
-      originalUrl: image.status.url,
+      originalUrl: image.originalUrl ?? "",
       decoratedUrl: "https://picsum.photos/400/300",
     });
   },
@@ -108,10 +123,10 @@ export const listImages = query({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
-    
+
     return await ctx.db
       .query("images")
-      .withIndex("by_user", q => q.eq("userId", userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
       .collect();
   },

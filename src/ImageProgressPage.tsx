@@ -17,6 +17,8 @@ export default function ImageProgressPage({ imageId }: ImageProgressPageProps) {
     "A beautiful painting in the style of Van Gogh"
   );
 
+  const [previewOriginal, setPreviewOriginal] = useState(false);
+
   const handleBack = useCallback(() => {
     routes.dashboard().push();
   }, []);
@@ -26,7 +28,7 @@ export default function ImageProgressPage({ imageId }: ImageProgressPageProps) {
   return (
     <div className="relative max-w-lg mx-auto w-full space-y-8">
       <button
-        className="absolute top-4 left-4 bg-white rounded-full shadow p-2 text-gray-700 hover:bg-gray-100"
+        className="absolute top-4 left-4 z-20 bg-white rounded-full shadow p-2 text-gray-700 hover:bg-gray-100"
         onClick={handleBack}
         aria-label="Back"
       >
@@ -52,11 +54,28 @@ export default function ImageProgressPage({ imageId }: ImageProgressPageProps) {
           </div>
         )}
         {image && image.status.kind === "generated" && (
-          <img
-            src={image.status.decoratedUrl}
-            alt="Decorated"
-            className="w-full h-64 object-cover rounded-lg"
-          />
+          <div
+            className="relative w-full h-64"
+            onMouseEnter={() => setPreviewOriginal(true)}
+            onMouseLeave={() => setPreviewOriginal(false)}
+            onPointerDown={() => setPreviewOriginal(true)}
+            onPointerUp={() => setPreviewOriginal(false)}
+            onPointerCancel={() => setPreviewOriginal(false)}
+            tabIndex={0}
+            aria-label="Hold or hover to preview original image"
+          >
+            <img
+              src={
+                previewOriginal ? image.originalUrl : image.status.decoratedUrl
+              }
+              alt={previewOriginal ? "Original" : "Decorated"}
+              className="w-full h-64 object-cover rounded-lg transition-opacity duration-200"
+            />
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+              {previewOriginal ? "Original" : "Decorated"} (hold or hover to
+              preview original)
+            </div>
+          </div>
         )}
         <div className="text-sm text-gray-500 text-center font-medium mt-4">
           {(!image || image.status.kind === "uploading") && "Uploading..."}
@@ -84,16 +103,26 @@ export default function ImageProgressPage({ imageId }: ImageProgressPageProps) {
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="A beautiful painting in the style of Van Gogh"
-            disabled={!image || image.status.kind !== "uploaded"}
+            disabled={
+              !image ||
+              (image.status.kind !== "uploaded" &&
+                image.status.kind !== "generated")
+            }
           />
           <button
             className="mt-4 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!image || image.status.kind !== "uploaded"}
+            disabled={
+              !image ||
+              (image.status.kind !== "uploaded" &&
+                image.status.kind !== "generated")
+            }
             onClick={() =>
               startGeneration({ imageId: imageId as Id<"images"> })
             }
           >
-            Generate
+            {image && image.status.kind === "generated"
+              ? "Re-generate"
+              : "Generate"}
           </button>
         </div>
       </div>
