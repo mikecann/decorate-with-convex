@@ -1,4 +1,4 @@
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { routes } from "./routes";
 import { useCallback, useState } from "react";
@@ -20,6 +20,8 @@ export default function ImageProgressPage({ imageId }: ImageProgressPageProps) {
   const handleBack = useCallback(() => {
     routes.dashboard().push();
   }, []);
+
+  const startGeneration = useMutation(api.images.startGeneration);
 
   return (
     <div className="relative max-w-lg mx-auto w-full space-y-8">
@@ -84,6 +86,15 @@ export default function ImageProgressPage({ imageId }: ImageProgressPageProps) {
             placeholder="A beautiful painting in the style of Van Gogh"
             disabled={!image || image.status.kind !== "uploaded"}
           />
+          <button
+            className="mt-4 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!image || image.status.kind !== "uploaded"}
+            onClick={() =>
+              startGeneration({ imageId: imageId as Id<"images"> })
+            }
+          >
+            Generate
+          </button>
         </div>
       </div>
     </div>
