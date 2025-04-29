@@ -11,7 +11,7 @@ import { AppHeader } from "./common/AppHeader";
 export default function App() {
   const route = useRoute();
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--color-bg)]">
+    <div className="h-full-vh flex flex-col bg-[var(--color-bg)]">
       <main className="flex-1 flex flex-col">
         <Authenticated>
           <AppHeader />
@@ -25,7 +25,6 @@ export default function App() {
           <UnauthenticatedContent />
         </Unauthenticated>
       </main>
-
       <Toaster />
     </div>
   );

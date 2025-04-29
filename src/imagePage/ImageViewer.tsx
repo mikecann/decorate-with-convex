@@ -33,7 +33,7 @@ export function ImageViewer({
         <img
           src={src}
           alt={alt}
-          className="max-h-[60vh] max-w-full object-contain rounded-xl shadow-lg transition-all duration-300"
+          className="max-h-[calc(var(--vh,1vh)*60)] max-w-full object-contain rounded-xl shadow-lg transition-all duration-300"
         />
         {children}
       </div>
@@ -41,7 +41,7 @@ export function ImageViewer({
         <img
           src={src}
           alt={modalAlt || alt}
-          className="max-h-[80vh] max-w-full object-contain rounded-2xl shadow-xl bg-white"
+          className="max-h-[calc(var(--vh,1vh)*80)] max-w-full object-contain rounded-2xl shadow-xl bg-white"
         />
       </FullscreenModal>
     </>
