@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { routes } from "./routes";
-import { useCallback, useState, useRef } from "react";
+import { useState, useRef } from "react";
 import type { Id } from "../convex/_generated/dataModel";
 import { toast } from "sonner";
 import { useApiErrorHandler } from "./lib/error";
@@ -32,7 +32,7 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
 
   const [showTooltip, setShowTooltip] = useState(false);
   const tooltipTimeout = useRef<NodeJS.Timeout | null>(null);
-  const [tabIndex, setTabIndex] = useState(0);
+  const [tabIndex, setTabIndex] = useState(1);
 
   const startGeneration = useMutation(api.images.startGeneration);
   const deleteImage = useMutation(api.images.deleteImage);
