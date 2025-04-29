@@ -1,7 +1,7 @@
 "use node";
 import { internalAction } from "./_generated/server";
 import { v } from "convex/values";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import OpenAI from "openai";
 import { File } from "formdata-node";
 import sharp from "sharp";
@@ -101,7 +101,7 @@ export const generateDecoratedImage = internalAction({
     if (!url) throw new Error("Failed to get storage URL after upload");
 
     try {
-      await ctx.runMutation(api.images.finishGeneration, {
+      await ctx.runMutation(internal.images.finishGeneration, {
         imageId,
         image,
         decoratedImage: { url, storageId },

@@ -17,7 +17,6 @@ import type * as auth from "../auth.js";
 import type * as generateDecoratedImage from "../generateDecoratedImage.js";
 import type * as http from "../http.js";
 import type * as images from "../images.js";
-import type * as lib from "../lib.js";
 import type * as router from "../router.js";
 
 /**
@@ -33,7 +32,6 @@ declare const fullApi: ApiFromModules<{
   generateDecoratedImage: typeof generateDecoratedImage;
   http: typeof http;
   images: typeof images;
-  lib: typeof lib;
   router: typeof router;
 }>;
 export declare const api: FilterApi<

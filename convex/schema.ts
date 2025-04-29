@@ -1,6 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
+import { typedV } from "convex-helpers/validators";
 
 // Extracted validator for an image object with url and storageId
 const imageObject = v.object({
@@ -8,7 +9,7 @@ const imageObject = v.object({
   storageId: v.id("_storage"),
 });
 
-export default defineSchema({
+const schema = defineSchema({
   ...authTables,
   images: defineTable({
     userId: v.id("users"),
@@ -34,3 +35,7 @@ export default defineSchema({
     ),
   }).index("by_user", ["userId"]),
 });
+
+export const vv = typedV(schema);
+
+export default schema;

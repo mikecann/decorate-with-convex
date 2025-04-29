@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
 import { ensureFP } from "../shared/ensure";
@@ -31,6 +31,13 @@ export const markUploaded = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
+    const image = await ctx.db.get(args.imageId);
+    if (!image) throw new Error(`Image with id '${args.imageId}' not found`);
+    if (image.userId !== userId)
+      throw new Error(
+        `Image with id '${args.imageId}' does not belong to the authenticated user`
+      );
+
     const url = await ctx.storage.getUrl(args.storageId);
     if (!url) throw new Error("Failed to get URL");
 
@@ -55,6 +62,10 @@ export const startGeneration = mutation({
 
     const image = await ctx.db.get(args.imageId);
     if (!image) throw new Error(`Image with id '${args.imageId}' not found`);
+    if (image.userId !== userId)
+      throw new Error(
+        `Image with id '${args.imageId}' does not belong to the authenticated user`
+      );
 
     if (image.status.kind !== "uploaded" && image.status.kind !== "generated")
       throw new Error(
@@ -108,7 +119,7 @@ export const getImage = query({
   },
 });
 
-export const finishGeneration = mutation({
+export const finishGeneration = internalMutation({
   args: {
     imageId: v.id("images"),
     image: v.object({ url: v.string(), storageId: v.id("_storage") }),
@@ -131,7 +142,7 @@ export const listImages = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    if (!userId) throw new Error("Not authenticated");
 
     return await ctx.db
       .query("images")
@@ -151,6 +162,11 @@ export const deleteImage = mutation({
 
     const image = await ctx.db.get(args.imageId);
     if (!image) throw new Error("Image not found");
+
+    if (image.userId != userId)
+      throw new Error(
+        `Image with id '${args.imageId}' does not belong to the authenticated user`
+      );
 
     await match(image.status)
       .with({ kind: "uploading" }, async () => {
