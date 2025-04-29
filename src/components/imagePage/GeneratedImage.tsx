@@ -43,7 +43,7 @@ export function GeneratedImage({
             <img
               src={currentImageUrl}
               alt={currentImageType}
-              className="max-h-[60vh] max-w-full object-contain rounded-md shadow-md transition-opacity duration-200"
+              className="max-h-[60vh] max-w-full object-contain rounded-md shadow-lg transition-opacity duration-200"
             />
             {prompt && (
               <div className="text-xs text-center font-medium px-4 py-2">

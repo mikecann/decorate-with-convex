@@ -6,11 +6,11 @@ interface GeneratingImageProps {
 export function GeneratingImage({ imageUrl, prompt }: GeneratingImageProps) {
   return (
     <div className="relative w-full h-full flex items-center justify-center">
-      <div className="bg-white/80 border border-[var(--color-border)] rounded-2xl shadow-xl flex items-center justify-center w-full h-full p-4">
+      <div className="flex items-center justify-center w-full h-full p-4">
         <img
           src={imageUrl}
           alt="Original"
-          className="max-h-[60vh] max-w-full object-contain rounded-xl shadow-md transition-all duration-300"
+          className="max-h-[60vh] max-w-full object-contain rounded-xl shadow-lg transition-all duration-300"
         />
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm rounded-2xl z-10">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-gray-200 mb-4 bg-white/80"></div>

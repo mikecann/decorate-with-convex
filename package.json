@@ -22,7 +22,7 @@
     "react-dom": "^19.0.0",
     "sharp": "0.33.5",
     "sonner": "^2.0.3",
-    "tailwind-merge": "^3.1.0",
+    "tailwind-merge": "^3.2.0",
     "ts-pattern": "^5.7.0",
     "type-route": "^1.1.0"
   },

@@ -4,6 +4,8 @@ import { SignOutButton } from "./SignOutButton";
 import { Toaster } from "sonner";
 import { useRoute, routes } from "./routes";
 import Dashboard from "./Dashboard";
+import { Button } from "./common/Button";
+import { cn } from "./lib/utils";
 
 import { Id } from "../convex/_generated/dataModel";
 import ImagePage from "./ImagePage";
@@ -30,13 +32,14 @@ export default function App() {
         <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-md p-4 flex justify-between items-center border-b border-[var(--color-border)] shadow-sm">
           <div className="flex items-center">
             {route.name === "image" ? (
-              <button
-                className="bg-white rounded-full shadow p-2 text-gray-700 hover:bg-gray-100 flex items-center"
+              <Button
+                variant="secondary"
+                className="rounded-full shadow text-gray-700 hover:bg-gray-100 flex items-center"
                 onClick={() => routes.dashboard().push()}
                 aria-label="Back"
               >
                 <span className="text-xl mr-1">←</span> Back
-              </button>
+              </Button>
             ) : (
               <img
                 src="/logo.png"
@@ -73,20 +76,28 @@ export default function App() {
       </main>
       {/* Bottom nav for mobile */}
       <nav className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-[var(--color-border)] shadow-lg flex md:hidden justify-around py-2 px-4">
-        <button
-          className={`flex flex-col items-center text-xs font-medium ${route.name === "dashboard" ? "accent-text" : "text-gray-400"}`}
+        <Button
+          variant="link"
+          className={cn(
+            "flex flex-col items-center text-xs font-medium",
+            route.name === "dashboard" ? "accent-text" : "text-gray-400"
+          )}
           onClick={() => routes.dashboard().push()}
         >
           <LayoutDashboard className="w-6 h-6 mb-1" />
           <span>Dashboard</span>
-        </button>
-        <button
-          className={`flex flex-col items-center text-xs font-medium ${route.name === "image" ? "accent-text" : "text-gray-400"}`}
+        </Button>
+        <Button
+          variant="link"
+          className={cn(
+            "flex flex-col items-center text-xs font-medium",
+            route.name === "image" ? "accent-text" : "text-gray-400"
+          )}
           onClick={handleUploadButtonClick}
         >
           <ImagePlus className="w-6 h-6 mb-1" />
           <span>Upload</span>
-        </button>
+        </Button>
         <input
           ref={uploadInputRef}
           type="file"

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useApiErrorHandler } from "../../lib/error";
 import { routes } from "../../routes";
 import { useState } from "react";
+import { Button } from "../../common/Button";
 
 interface PromptPanelProps {
   imageId: Id<"images">;
@@ -53,8 +54,10 @@ export function PromptPanel({
         />
       </div>
       <div className="flex flex-col gap-2 mt-4">
-        <button
-          className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold text-lg shadow hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
           disabled={!canGenerate}
           onClick={() => {
             if (!canGenerate) {
@@ -70,14 +73,15 @@ export function PromptPanel({
           }}
         >
           {currentPrompt ? "Re-generate" : "Generate"}
-        </button>
-        <button
-          className="w-full py-2 rounded-lg border border-red-200 text-red-600 bg-transparent hover:bg-red-50 transition-colors font-semibold"
+        </Button>
+        <Button
+          variant="danger"
+          fullWidth
           onClick={handleDelete}
           aria-label="Delete"
         >
           Delete image
-        </button>
+        </Button>
       </div>
     </div>
   );

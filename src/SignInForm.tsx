@@ -2,6 +2,7 @@
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Button } from "./common/Button";
 
 export function SignInForm() {
   const { signIn } = useAuthActions();
@@ -41,22 +42,22 @@ export function SignInForm() {
           placeholder="Password"
           required
         />
-        <button className="auth-button" type="submit" disabled={submitting}>
+        <Button variant="primary" fullWidth type="submit" disabled={submitting}>
           {flow === "signIn" ? "Sign in" : "Sign up"}
-        </button>
+        </Button>
         <div className="text-center text-sm text-slate-600">
           <span>
             {flow === "signIn"
               ? "Don't have an account? "
               : "Already have an account? "}
           </span>
-          <button
+          <Button
+            variant="link"
             type="button"
-            className="text-blue-500 cursor-pointer"
             onClick={() => setFlow(flow === "signIn" ? "signUp" : "signIn")}
           >
             {flow === "signIn" ? "Sign up instead" : "Sign in instead"}
-          </button>
+          </Button>
         </div>
       </form>
       <div className="flex items-center justify-center my-3">
@@ -64,9 +65,13 @@ export function SignInForm() {
         <span className="mx-4 text-slate-400 ">or</span>
         <hr className="my-4 grow" />
       </div>
-      <button className="auth-button" onClick={() => void signIn("anonymous")}>
+      <Button
+        variant="secondary"
+        fullWidth
+        onClick={() => void signIn("anonymous")}
+      >
         Sign in anonymously
-      </button>
+      </Button>
     </div>
   );
 }
