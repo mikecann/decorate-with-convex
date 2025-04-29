@@ -65,13 +65,13 @@ export function SignInForm() {
         <span className="mx-4 text-slate-400 ">or</span>
         <hr className="my-4 grow" />
       </div>
-      <Button
+      {/* <Button
         variant="secondary"
         fullWidth
         onClick={() => void signIn("anonymous")}
       >
         Sign in anonymously
-      </Button>
+      </Button> */}
     </div>
   );
 }
