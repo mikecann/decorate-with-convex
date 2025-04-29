@@ -27,7 +27,7 @@ export function FullscreenModal({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
@@ -60,30 +60,20 @@ export function FullscreenModal({
           {children}
         </div>
       </div>
-      <style jsx>{`
+      <style>{`
         @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
         .animate-fadeIn {
           animation: fadeIn 0.2s ease;
         }
         @keyframes modalIn {
-          from {
-            transform: scale(0.95) translateY(40px);
-            opacity: 0;
-          }
-          to {
-            transform: scale(1) translateY(0);
-            opacity: 1;
-          }
+          from { transform: scale(0.95) translateY(40px); opacity: 0; }
+          to { transform: scale(1) translateY(0); opacity: 1; }
         }
         .animate-modalIn {
-          animation: modalIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          animation: modalIn 0.25s cubic-bezier(0.4,0,0.2,1);
         }
       `}</style>
     </div>

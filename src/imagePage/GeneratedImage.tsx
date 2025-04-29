@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Download } from "lucide-react";
-import Tabs from "../../common/Tabs";
+import Tabs from "../common/Tabs";
 import { ImageViewer } from "./ImageViewer";
 
 interface GeneratedImageProps {

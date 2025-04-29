@@ -1,4 +1,4 @@
-import { Id } from "../../../convex/_generated/dataModel";
+import { Id } from "../../convex/_generated/dataModel";
 import { UploadingImage } from "./UploadingImage";
 import { UploadedImage } from "./UploadedImage";
 import { GeneratingImage } from "./GeneratingImage";

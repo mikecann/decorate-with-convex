@@ -1,12 +1,12 @@
 import { useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { Id } from "../../../convex/_generated/dataModel";
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
 import { toast } from "sonner";
-import { useApiErrorHandler } from "../../common/error";
-import { routes } from "../../routes";
+import { useApiErrorHandler } from "../common/error";
+import { routes } from "../routes";
 import { useState } from "react";
-import { Button } from "../../common/Button";
-import { ConfirmDialog } from "../../common/ConfirmDialog";
+import { Button } from "../common/Button";
+import { ConfirmDialog } from "../common/ConfirmDialog";
 
 interface PromptPanelProps {
   imageId: Id<"images">;

@@ -1,5 +1,5 @@
-import { Id } from "../../../convex/_generated/dataModel";
-import { getUploadingImageObjectUrl } from "../../lib/utils";
+import { Id } from "../../convex/_generated/dataModel";
+import { getUploadingImageObjectUrl } from "../common/utils";
 import { ImageViewer } from "./ImageViewer";
 
 interface UploadingImageProps {

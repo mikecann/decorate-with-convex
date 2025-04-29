@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "./Button";
-import { cn } from "../lib/utils";
+import { cn } from "./utils";
 
 interface TabsProps {
   tabs: string[];

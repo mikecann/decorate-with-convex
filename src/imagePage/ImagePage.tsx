@@ -1,8 +1,8 @@
 import { useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
-import type { Id } from "../convex/_generated/dataModel";
-import { PromptPanel } from "./components/imagePage/PromptPanel";
-import { ImageDisplay } from "./components/imagePage/ImageDisplay";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+import { PromptPanel } from "./PromptPanel";
+import { ImageDisplay } from "./ImageDisplay";
 
 interface ImageProgressPageProps {
   imageId: Id<"images">;

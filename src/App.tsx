@@ -1,17 +1,17 @@
 import { Authenticated, Unauthenticated } from "convex/react";
-import { SignInForm } from "./SignInForm";
-import { SignOutButton } from "./SignOutButton";
+import { SignInForm } from "./auth/SignInForm";
+import { SignOutButton } from "./auth/SignOutButton";
 import { Toaster } from "sonner";
 import { useRoute, routes } from "./routes";
-import Dashboard from "./Dashboard";
+import Dashboard from "./dashboard/Dashboard";
 import { Button } from "./common/Button";
-import { cn } from "./lib/utils";
+import { cn } from "./common/utils";
 
 import { Id } from "../convex/_generated/dataModel";
-import ImagePage from "./ImagePage";
+import ImagePage from "./imagePage/ImagePage";
 import { LayoutDashboard, ImagePlus } from "lucide-react";
 import { useRef } from "react";
-import { useImageUpload } from "./lib/utils";
+import { useImageUpload } from "./common/utils";
 
 export default function App() {
   const route = useRoute();
