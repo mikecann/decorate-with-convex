@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "flex-template",
+      "name": "decorate-with-convex",
       "dependencies": {
         "@convex-dev/auth": "^0.0.80",
         "clsx": "^2.1.1",
