@@ -13,15 +13,16 @@ interface ImageProgressPageProps {
   imageId: Id<"images">;
 }
 
+const defaultPrompt =
+  "Please decordate this so it looks like a professional interior decorator has designed it";
+
 export default function ImagePage({ imageId }: ImageProgressPageProps) {
   const image = useQuery(api.images.getImage, {
     imageId,
   });
   const onApiError = useApiErrorHandler();
 
-  const [prompt, setPrompt] = useState(
-    "A beautiful painting in the style of Van Gogh"
-  );
+  const [prompt, setPrompt] = useState(defaultPrompt);
 
   const promptFromStatus =
     image &&
@@ -60,18 +61,14 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
             Image Prompt
           </h2>
           <p className="text-sm text-gray-500 mb-4">
-            Enter a description of how you want your image to be decorated. For
-            example:
-            <span className="italic block mt-1">
-              A beautiful painting in the style of Van Gogh
-            </span>
+            Enter a description of how you want your image to be decorated.
           </p>
           <textarea
             id="prompt"
             className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[200px] resize-y text-base mb-4 shadow-sm"
             value={promptFromStatus ?? prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="A beautiful painting in the style of Van Gogh"
+            placeholder={defaultPrompt}
             disabled={image && image.status.kind === "generating"}
           />
         </div>
@@ -205,21 +202,32 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
                   <div className="relative">
                     {/* Download button in top-right */}
                     <a
-                      href={image.status.decoratedImage.url}
+                      href={
+                        tabIndex === 0
+                          ? image.status.image.url
+                          : image.status.decoratedImage.url
+                      }
                       download={
-                        image.status.decoratedImage.url.split("/").pop() ||
-                        "decorated-image.webp"
+                        tabIndex === 0
+                          ? image.status.image.url.split("/").pop() ||
+                            "original-image.webp"
+                          : image.status.decoratedImage.url.split("/").pop() ||
+                            "decorated-image.webp"
                       }
                       className="absolute top-2 right-2 z-20 bg-white/80 rounded-full p-2 shadow border border-gray-200 hover:bg-blue-50 transition-colors"
-                      title="Download decorated image"
-                      aria-label="Download decorated image"
+                      title={
+                        tabIndex === 0
+                          ? "Download original image"
+                          : "Download decorated image"
+                      }
+                      aria-label={
+                        tabIndex === 0
+                          ? "Download original image"
+                          : "Download decorated image"
+                      }
                     >
                       <Download className="w-5 h-5 text-blue-600" />
                     </a>
-                    {/* Inline label inside image */}
-                    <span className="absolute top-2 left-2 bg-white/80 text-xs font-bold text-gray-700 px-2 py-0.5 rounded shadow-sm border border-gray-200 select-none z-10">
-                      {tabIndex === 0 ? "Original" : "Decorated"}
-                    </span>
                     <img
                       src={
                         tabIndex === 0

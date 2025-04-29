@@ -5,6 +5,8 @@ import { api, internal } from "./_generated/api";
 import { ensureFP } from "../shared/ensure";
 import OpenAI from "openai";
 import { match } from "ts-pattern";
+import { resizeAndConvertToWebp } from "./imageHelpers";
+import { generateDecoratedImage } from "./generateDecoratedImage";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -81,11 +83,15 @@ export const startGeneration = mutation({
     });
 
     // Schedule the real AI generation, passing the image object
-    await ctx.scheduler.runAfter(0, internal.images.generateDecoratedImage, {
-      imageId: args.imageId,
-      image: imageObj,
-      prompt: args.prompt,
-    });
+    await ctx.scheduler.runAfter(
+      0,
+      internal.generateDecoratedImage.generateDecoratedImage,
+      {
+        imageId: args.imageId,
+        image: imageObj,
+        prompt: args.prompt,
+      }
+    );
   },
 });
 
@@ -170,105 +176,5 @@ export const deleteImage = mutation({
       .exhaustive();
 
     await ctx.db.delete(args.imageId);
-  },
-});
-
-export const generateDecoratedImage = internalAction({
-  args: {
-    imageId: v.id("images"),
-    image: v.object({ url: v.string(), storageId: v.id("_storage") }),
-    prompt: v.string(),
-  },
-  handler: async (ctx, { imageId, image, prompt }) => {
-    console.log(`[generateDecoratedImage] Starting for image`, {
-      imageId,
-      image,
-      prompt,
-    });
-
-    // Fetch the uploaded image from storage
-    console.log(
-      `[generateDecoratedImage] Fetching uploaded image from storage: ${image.url}`
-    );
-    const response = await fetch(image.url);
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch uploaded image from storage: ${response.statusText}`
-      );
-    }
-    const arrayBuffer = await response.arrayBuffer();
-    // Convert ArrayBuffer to Uint8Array for OpenAI SDK
-    const imageBytes = new Uint8Array(arrayBuffer);
-    // Create a File object for OpenAI SDK (Node.js polyfill)
-    const imageFile = new File([imageBytes], "input.png", {
-      type: "image/png",
-    });
-
-    // Call OpenAI image edit endpoint
-    console.log(
-      `[generateDecoratedImage] Calling OpenAI image edit endpoint with prompt: ${prompt}`
-    );
-    const editResponse = await openai.images.edit({
-      image: imageFile,
-      model: "gpt-image-1",
-      prompt,
-      n: 1,
-    });
-
-    // Log token usage and cost if available
-    if (editResponse.usage) {
-      const { input_tokens, output_tokens, input_tokens_details } =
-        editResponse.usage;
-      const textTokens = input_tokens_details?.text_tokens ?? 0;
-      const imageTokens = input_tokens_details?.image_tokens ?? 0;
-      const textCost = textTokens * 0.000005;
-      const imageCost = imageTokens * 0.00001;
-      const outputCost = output_tokens * 0.00004;
-      const totalCost = textCost + imageCost + outputCost;
-      console.log(
-        `[generateDecoratedImage] Token usage: input_tokens=${input_tokens} (text=${textTokens}, image=${imageTokens}), output_tokens=${output_tokens}`
-      );
-      console.log(
-        `[generateDecoratedImage] Cost: text_input=$${textCost.toFixed(6)}, image_input=$${imageCost.toFixed(6)}, output=$${outputCost.toFixed(6)}, total=$${totalCost.toFixed(6)}`
-      );
-    } else {
-      console.warn(
-        "[generateDecoratedImage] No usage info returned from OpenAI response; cannot log token usage or cost."
-      );
-    }
-
-    if (!editResponse.data || !editResponse.data[0].b64_json)
-      throw new Error("No image data returned from OpenAI image edit endpoint");
-
-    // Store the generated image in Convex storage
-    console.log(
-      `[generateDecoratedImage] Storing generated image in Convex storage`
-    );
-    const base64ToUint8Array = (base64: string): Uint8Array => {
-      const binaryString = globalThis.atob(base64);
-      const len = binaryString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
-      return bytes;
-    };
-    const bytes = base64ToUint8Array(editResponse.data[0].b64_json);
-    const blob = new Blob([bytes], { type: "image/png" });
-    const storageId = await ctx.storage.store(blob);
-    const url = await ctx.storage.getUrl(storageId);
-    if (!url) throw new Error("Failed to get storage URL after upload");
-
-    try {
-      await ctx.runMutation(api.images.finishGeneration, {
-        imageId,
-        image,
-        decoratedImage: { url, storageId },
-        prompt,
-      });
-    } catch (e) {
-      console.error(e);
-      await ctx.storage.delete(storageId);
-    }
-
-    console.log(`[generateDecoratedImage] Done for imageId: ${imageId}`);
   },
 });
