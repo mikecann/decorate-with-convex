@@ -38,7 +38,7 @@ export function PromptPanel({
   };
 
   return (
-    <div className="flex flex-col justify-between w-full md:w-1/2 max-w-xl bg-white r p-8 md:p-12 overflow-y-auto min-h-[320px] border-r border-[var(--color-border)]">
+    <div className="flex flex-col justify-between w-full md:w-1/2 md:max-w-[500px] max-w-full bg-white r p-8 pb-[100px] md:p-12 overflow-y-auto min-h-[320px] border-r border-[var(--color-border)]">
       <div>
         <h2 className="text-2xl font-bold mb-4 text-slate-800">Image Prompt</h2>
         <p className="text-sm text-gray-500 mb-4">

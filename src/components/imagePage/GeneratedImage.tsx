@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Download } from "lucide-react";
 import Tabs from "../../common/Tabs";
+import { ImageViewer } from "./ImageViewer";
 
 interface GeneratedImageProps {
   originalImageUrl: string;
@@ -27,30 +28,26 @@ export function GeneratedImage({
       />
       <div className="rounded-2xl flex items-center justify-center w-full p-4 transition-all duration-300">
         <div className="relative w-full h-full flex items-center justify-center">
-          <div className="relative">
+          <ImageViewer src={currentImageUrl} alt={currentImageType}>
             <a
               href={currentImageUrl}
               download={
                 currentImageUrl.split("/").pop() ||
                 `${currentImageType}-image.webp`
               }
-              className="absolute top-2 right-2 z-20 bg-white/80 rounded-full p-2 shadow border border-gray-200 hover:bg-blue-50 transition-colors"
+              className="absolute top-2 right-2 z-2 bg-white/80 rounded-full p-2 shadow border border-gray-200 hover:bg-blue-50 transition-colors"
               title={`Download ${currentImageType} image`}
               aria-label={`Download ${currentImageType} image`}
+              onClick={(e) => e.stopPropagation()}
             >
               <Download className="w-5 h-5 text-blue-600" />
             </a>
-            <img
-              src={currentImageUrl}
-              alt={currentImageType}
-              className="max-h-[60vh] max-w-full object-contain rounded-md shadow-lg transition-opacity duration-200"
-            />
-            {prompt && (
-              <div className="text-xs text-center font-medium px-4 py-2">
+            {prompt && currentImageType == "decorated" && (
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-center font-medium px-4 py-2 bg-white/80 rounded shadow">
                 <span className="italic">{prompt}</span>
               </div>
             )}
-          </div>
+          </ImageViewer>
         </div>
       </div>
     </div>
