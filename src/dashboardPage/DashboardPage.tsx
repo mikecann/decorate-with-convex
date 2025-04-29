@@ -5,7 +5,7 @@ import { useImageUpload } from "../common/utils";
 import { UploadCard } from "./UploadCard";
 import { ImageGrid } from "./ImageGrid";
 
-export default function Dashboard() {
+export default function DashboardPage() {
   const images = useQuery(api.images.listImages) || [];
   const [isDragging, setIsDragging] = useState(false);
   const handleUpload = useImageUpload();

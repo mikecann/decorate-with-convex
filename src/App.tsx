@@ -3,7 +3,7 @@ import { SignInForm } from "./auth/SignInForm";
 import { SignOutButton } from "./auth/SignOutButton";
 import { Toaster } from "sonner";
 import { useRoute, routes } from "./routes";
-import Dashboard from "./dashboard/Dashboard";
+import DashboardPage from "./dashboardPage/DashboardPage";
 import { Button } from "./common/Button";
 import { cn } from "./common/utils";
 
@@ -53,7 +53,7 @@ export default function App() {
       </Authenticated>
       <main className="flex-1 flex flex-col">
         <Authenticated>
-          {route.name === "dashboard" && <Dashboard />}
+          {route.name === "dashboard" && <DashboardPage />}
           {route.name === "image" && (
             <ImagePage imageId={route.params.imageId as Id<"images">} />
           )}
