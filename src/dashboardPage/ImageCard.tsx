@@ -42,7 +42,7 @@ export function ImageCard({ image }: ImageCardProps) {
     >
       {/* Status pill */}
       <div
-        className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold border shadow-sm ${statusColor}`}
+        className={`absolute top-3 right-3 px-3 py-1 z-10 rounded-full text-xs font-semibold border shadow-sm ${statusColor}`}
       >
         {statusLabel}
       </div>
