@@ -1,14 +1,9 @@
 import { v } from "convex/values";
-import { mutation, query, action, internalAction } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { api, internal } from "./_generated/api";
+import { internal } from "./_generated/api";
 import { ensureFP } from "../shared/ensure";
-import OpenAI from "openai";
 import { match } from "ts-pattern";
-import { resizeAndConvertToWebp } from "./imageHelpers";
-import { generateDecoratedImage } from "./generateDecoratedImage";
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export const generateUploadUrl = mutation({
   args: {},

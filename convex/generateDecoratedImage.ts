@@ -2,9 +2,14 @@
 import { internalAction } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
-import { resizeAndConvertToWebp } from "./imageHelpers";
 import OpenAI from "openai";
 import { File } from "formdata-node";
+import sharp from "sharp";
+
+if (!process.env.OPENAI_API_KEY)
+  throw new Error(
+    `OPENAI_API_KEY is not set, please 'bun convex env set OPEN_API_KEY <your-key>'`
+  );
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -21,11 +26,6 @@ export const generateDecoratedImage = internalAction({
       prompt,
     });
 
-    // Fetch the uploaded image from storage
-    console.log(
-      `[generateDecoratedImage] Fetching uploaded image from storage: ${image.url}`
-    );
-
     const response = await fetch(image.url);
     if (!response.ok) {
       throw new Error(
@@ -33,7 +33,7 @@ export const generateDecoratedImage = internalAction({
       );
     }
 
-    // Convert response to a File object
+    // Convert response to a File object for OpenAI
     const buffer = await response.arrayBuffer();
     const file = new File([buffer], "image.png", {
       type: response.headers.get("content-type") || "image/png",
@@ -41,12 +41,8 @@ export const generateDecoratedImage = internalAction({
 
     // Call OpenAI image edit endpoint
     console.log(
-      `[generateDecoratedImage] Calling OpenAI image edit endpoint with prompt: ${prompt}`,
-      {
-        mime: response.headers.get("content-type"),
-      }
+      `[generateDecoratedImage] Calling OpenAI image edit endpoint with prompt: ${prompt}`
     );
-
     const editResponse = await openai.images.edit({
       image: file,
       model: "gpt-image-1",
@@ -92,7 +88,7 @@ export const generateDecoratedImage = internalAction({
     };
     const bytes = base64ToUint8Array(editResponse.data[0].b64_json);
 
-    // Resize and convert to webp using helper (max 2048x2048)
+    // Resize and convert to webp using helper
     let webpBuffer: Buffer;
     try {
       webpBuffer = await resizeAndConvertToWebp(Buffer.from(bytes));
@@ -119,3 +115,15 @@ export const generateDecoratedImage = internalAction({
     console.log(`[generateDecoratedImage] Done for imageId: ${imageId}`);
   },
 });
+
+/**
+ * Resize and convert an image buffer to webp format, max 2048x2048.
+ * @param inputBuffer - The input image buffer (PNG, JPEG, etc)
+ * @returns Promise<Buffer> - The processed webp image buffer
+ */
+async function resizeAndConvertToWebp(inputBuffer: Buffer): Promise<Buffer> {
+  return sharp(inputBuffer)
+    .resize(2048, 2048, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 92 })
+    .toBuffer();
+}
