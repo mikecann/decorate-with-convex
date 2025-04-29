@@ -60,12 +60,13 @@ export function SignInForm() {
           </Button>
         </div>
       </form>
+      {/*
       <div className="flex items-center justify-center my-3">
         <hr className="my-4 grow" />
         <span className="mx-4 text-slate-400 ">or</span>
         <hr className="my-4 grow" />
       </div>
-      {/* <Button
+      <Button
         variant="secondary"
         fullWidth
         onClick={() => void signIn("anonymous")}
