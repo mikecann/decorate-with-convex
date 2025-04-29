@@ -6,7 +6,8 @@ import { UploadCard } from "./UploadCard";
 import { ImageGrid } from "./ImageGrid";
 
 export default function DashboardPage() {
-  const images = useQuery(api.images.listImages) || [];
+  const images = useQuery(api.images.listImages);
+  const isLoading = images === undefined;
   const [isDragging, setIsDragging] = useState(false);
   const handleUpload = useImageUpload();
 
@@ -17,7 +18,7 @@ export default function DashboardPage() {
         isDragging={isDragging}
         setIsDragging={setIsDragging}
       />
-      <ImageGrid images={images} />
+      <ImageGrid images={images || []} loading={isLoading} />
     </div>
   );
 }
