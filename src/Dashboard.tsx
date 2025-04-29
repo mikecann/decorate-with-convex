@@ -1,21 +1,13 @@
-import { useCallback, useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useState } from "react";
+import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { toast } from "sonner";
 import { routes } from "./routes";
-import { useApiErrorHandler } from "./lib/error";
-import {
-  setUploadingImageObjectUrl,
-  clearUploadingImageObjectUrl,
-  useImageUpload,
-} from "./lib/utils";
+import { useImageUpload } from "./lib/utils";
 
 export default function Dashboard() {
   const images = useQuery(api.images.listImages) || [];
-  const generateUploadUrl = useMutation(api.images.generateUploadUrl);
-  const markUploaded = useMutation(api.images.markUploaded);
   const [isDragging, setIsDragging] = useState(false);
-  const onApiError = useApiErrorHandler();
   const handleUpload = useImageUpload();
 
   return (

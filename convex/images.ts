@@ -215,6 +215,28 @@ export const generateDecoratedImage = internalAction({
       n: 1,
     });
 
+    // Log token usage and cost if available
+    if (editResponse.usage) {
+      const { input_tokens, output_tokens, input_tokens_details } =
+        editResponse.usage;
+      const textTokens = input_tokens_details?.text_tokens ?? 0;
+      const imageTokens = input_tokens_details?.image_tokens ?? 0;
+      const textCost = textTokens * 0.000005;
+      const imageCost = imageTokens * 0.00001;
+      const outputCost = output_tokens * 0.00004;
+      const totalCost = textCost + imageCost + outputCost;
+      console.log(
+        `[generateDecoratedImage] Token usage: input_tokens=${input_tokens} (text=${textTokens}, image=${imageTokens}), output_tokens=${output_tokens}`
+      );
+      console.log(
+        `[generateDecoratedImage] Cost: text_input=$${textCost.toFixed(6)}, image_input=$${imageCost.toFixed(6)}, output=$${outputCost.toFixed(6)}, total=$${totalCost.toFixed(6)}`
+      );
+    } else {
+      console.warn(
+        "[generateDecoratedImage] No usage info returned from OpenAI response; cannot log token usage or cost."
+      );
+    }
+
     if (!editResponse.data || !editResponse.data[0].b64_json)
       throw new Error("No image data returned from OpenAI image edit endpoint");
 
