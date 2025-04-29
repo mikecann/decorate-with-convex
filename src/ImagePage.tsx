@@ -29,7 +29,6 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
       ? image.status.prompt
       : undefined;
 
-  const [previewOriginal, setPreviewOriginal] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const tooltipTimeout = useRef<NodeJS.Timeout | null>(null);
   const [tabIndex, setTabIndex] = useState(0);
@@ -201,7 +200,7 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
                 selectedIndex={tabIndex}
                 onTabChange={setTabIndex}
               />
-              <div className="rounded-2xl flex items-center justify-center w-full h-full p-4 transition-all duration-300">
+              <div className="rounded-2xl flex items-center justify-center w-full  p-4 transition-all duration-300">
                 <div className="relative w-full h-full flex items-center justify-center">
                   <div className="relative">
                     {/* Download button in top-right */}
@@ -219,15 +218,15 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
                     </a>
                     {/* Inline label inside image */}
                     <span className="absolute top-2 left-2 bg-white/80 text-xs font-bold text-gray-700 px-2 py-0.5 rounded shadow-sm border border-gray-200 select-none z-10">
-                      {tabIndex === 1 ? "Original" : "Decorated"}
+                      {tabIndex === 0 ? "Original" : "Decorated"}
                     </span>
                     <img
                       src={
-                        tabIndex === 1
+                        tabIndex === 0
                           ? image.status.image.url
                           : image.status.decoratedImage.url
                       }
-                      alt={tabIndex === 1 ? "Original" : "Decorated"}
+                      alt={tabIndex === 0 ? "Original" : "Decorated"}
                       className="max-h-[60vh] max-w-full object-contain rounded-md shadow-md transition-opacity duration-200"
                     />
                     {/* Pill badge for prompt */}

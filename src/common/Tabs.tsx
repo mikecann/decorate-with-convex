@@ -15,7 +15,7 @@ const Tabs: React.FC<TabsProps> = ({
 }) => {
   return (
     <div
-      className={`flex bg-gray-100 rounded-lg p-1 w-fit mx-auto mb-4 border border-gray-200 ${className}`}
+      className={`flex bg-gray-100 rounded-lg p-1 w-fit mx-auto mb-2 border border-gray-200 ${className}`}
       role="tablist"
     >
       {tabs.map((tab, idx) => (
