@@ -6,6 +6,7 @@ import { useApiErrorHandler } from "../../lib/error";
 import { routes } from "../../routes";
 import { useState } from "react";
 import { Button } from "../../common/Button";
+import { ConfirmDialog } from "../../common/ConfirmDialog";
 
 interface PromptPanelProps {
   imageId: Id<"images">;
@@ -25,20 +26,29 @@ export function PromptPanel({
   const deleteImage = useMutation(api.images.deleteImage);
   const onApiError = useApiErrorHandler();
   const [prompt, setPrompt] = useState(defaultPrompt);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleDelete = async () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this image? This action cannot be undone."
-      )
-    ) {
-      await deleteImage({ imageId }).catch(onApiError);
-      routes.dashboard().push();
-    }
+    setShowConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setShowConfirm(false);
+    await deleteImage({ imageId }).catch(onApiError);
+    routes.dashboard().push();
   };
 
   return (
     <div className="flex flex-col justify-between w-full md:w-1/2 md:max-w-[500px] max-w-full bg-white r p-8 pb-[100px] md:p-12 overflow-y-auto min-h-[320px] border-r border-[var(--color-border)]">
+      <ConfirmDialog
+        open={showConfirm}
+        title="Delete image"
+        message="Are you sure you want to delete this image? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setShowConfirm(false)}
+      />
       <div>
         <h2 className="text-2xl font-bold mb-4 text-slate-800">Image Prompt</h2>
         <p className="text-sm text-gray-500 mb-4">
