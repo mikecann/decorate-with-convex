@@ -22,6 +22,15 @@ export function FullscreenModal({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
 
+  useEffect(() => {
+    if (!open) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -35,7 +44,7 @@ export function FullscreenModal({
       role="dialog"
       tabIndex={-1}
     >
-      <div className="relative bg-white rounded-2xl shadow-2xl p-2 md:p-4 max-w-[98vw] max-h-[98vh] w-auto h-auto animate-modalIn">
+      <div className="relative bg-white rounded-2xl shadow-2xl p-1 md:p-2 max-w-[98vw] max-h-[98vh] w-auto h-auto animate-modalIn">
         <button
           className="absolute top-2 right-2 z-10 bg-white rounded-full p-2 shadow border border-gray-200 hover:bg-blue-50 transition-colors"
           onClick={onClose}
