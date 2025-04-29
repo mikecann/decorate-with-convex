@@ -13,23 +13,9 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
     imageId,
   });
 
-  const canGenerate =
-    !!image &&
-    (image.status.kind === "uploaded" || image.status.kind === "generated");
-
-  const currentPrompt =
-    image &&
-    (image.status.kind === "generating" || image.status.kind === "generated")
-      ? image.status.prompt
-      : undefined;
-
   return (
     <div className="relative flex flex-col-reverse md:flex-row flex-1 w-full bg-[var(--color-bg)]">
-      <PromptPanel
-        imageId={imageId}
-        canGenerate={canGenerate}
-        currentPrompt={currentPrompt}
-      />
+      {image && <PromptPanel image={image} />}
       {image && <ImageDisplay imageId={imageId} status={image.status} />}
     </div>
   );

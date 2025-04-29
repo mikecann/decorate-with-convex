@@ -1,6 +1,6 @@
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
+import { Doc, Id } from "../../convex/_generated/dataModel";
 import { toast } from "sonner";
 import { useApiErrorHandler } from "../common/error";
 import { routes } from "../routes";
@@ -9,23 +9,27 @@ import { Button } from "../common/Button";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 
 interface PromptPanelProps {
-  imageId: Id<"images">;
-  canGenerate: boolean;
-  currentPrompt?: string;
+  image: Doc<"images">;
 }
 
 const defaultPrompt =
   "Please decordate this so it looks like a professional interior decorator has designed it";
 
-export function PromptPanel({
-  imageId,
-  canGenerate,
-  currentPrompt,
-}: PromptPanelProps) {
+export function PromptPanel({ image }: PromptPanelProps) {
+  const canGenerate =
+    !!image &&
+    (image.status.kind === "uploaded" || image.status.kind === "generated");
+
+  const currentPrompt =
+    image &&
+    (image.status.kind === "generating" || image.status.kind === "generated")
+      ? image.status.prompt
+      : undefined;
+
   const startGeneration = useMutation(api.images.startGeneration);
   const deleteImage = useMutation(api.images.deleteImage);
   const onApiError = useApiErrorHandler();
-  const [prompt, setPrompt] = useState(defaultPrompt);
+  const [prompt, setPrompt] = useState(currentPrompt ?? defaultPrompt);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleDelete = async () => {
@@ -34,7 +38,7 @@ export function PromptPanel({
 
   const handleConfirmDelete = async () => {
     setShowConfirm(false);
-    await deleteImage({ imageId }).catch(onApiError);
+    await deleteImage({ imageId: image._id }).catch(onApiError);
     routes.dashboard().push();
   };
 
@@ -57,7 +61,7 @@ export function PromptPanel({
         <textarea
           id="prompt"
           className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[200px] resize-y text-base mb-4 shadow-sm"
-          value={currentPrompt ?? prompt}
+          value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder={defaultPrompt}
           disabled={!canGenerate}
@@ -77,7 +81,7 @@ export function PromptPanel({
               return;
             }
             startGeneration({
-              imageId,
+              imageId: image._id,
               prompt,
             }).catch(onApiError);
           }}
