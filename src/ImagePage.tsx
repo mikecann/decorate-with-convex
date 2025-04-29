@@ -6,6 +6,8 @@ import type { Id } from "../convex/_generated/dataModel";
 import { toast } from "sonner";
 import { useApiErrorHandler } from "./lib/error";
 import { getUploadingImageObjectUrl } from "./lib/utils";
+import { Download } from "lucide-react";
+import Tabs from "./common/Tabs";
 
 interface ImageProgressPageProps {
   imageId: Id<"images">;
@@ -30,6 +32,7 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
   const [previewOriginal, setPreviewOriginal] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const tooltipTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [tabIndex, setTabIndex] = useState(0);
 
   const startGeneration = useMutation(api.images.startGeneration);
   const deleteImage = useMutation(api.images.deleteImage);
@@ -192,30 +195,39 @@ export default function ImagePage({ imageId }: ImageProgressPageProps) {
             </div>
           )}
           {image && image.status.kind === "generated" && (
-            <div
-              className="relative w-full h-full flex items-center justify-center"
-              onMouseEnter={() => setPreviewOriginal(true)}
-              onMouseLeave={() => setPreviewOriginal(false)}
-              onPointerDown={() => setPreviewOriginal(true)}
-              onPointerUp={() => setPreviewOriginal(false)}
-              onPointerCancel={() => setPreviewOriginal(false)}
-              tabIndex={0}
-              aria-label="Hold or hover to preview original image"
-            >
+            <div className="relative w-full h-full flex flex-col items-center justify-center">
+              <Tabs
+                tabs={["Original", "Decorated"]}
+                selectedIndex={tabIndex}
+                onTabChange={setTabIndex}
+              />
               <div className="rounded-2xl flex items-center justify-center w-full h-full p-4 transition-all duration-300">
                 <div className="relative w-full h-full flex items-center justify-center">
                   <div className="relative">
+                    {/* Download button in top-right */}
+                    <a
+                      href={image.status.decoratedImage.url}
+                      download={
+                        image.status.decoratedImage.url.split("/").pop() ||
+                        "decorated-image.webp"
+                      }
+                      className="absolute top-2 right-2 z-20 bg-white/80 rounded-full p-2 shadow border border-gray-200 hover:bg-blue-50 transition-colors"
+                      title="Download decorated image"
+                      aria-label="Download decorated image"
+                    >
+                      <Download className="w-5 h-5 text-blue-600" />
+                    </a>
                     {/* Inline label inside image */}
                     <span className="absolute top-2 left-2 bg-white/80 text-xs font-bold text-gray-700 px-2 py-0.5 rounded shadow-sm border border-gray-200 select-none z-10">
-                      {previewOriginal ? "Original" : "Decorated"}
+                      {tabIndex === 1 ? "Original" : "Decorated"}
                     </span>
                     <img
                       src={
-                        previewOriginal
+                        tabIndex === 1
                           ? image.status.image.url
                           : image.status.decoratedImage.url
                       }
-                      alt={previewOriginal ? "Original" : "Decorated"}
+                      alt={tabIndex === 1 ? "Original" : "Decorated"}
                       className="max-h-[60vh] max-w-full object-contain rounded-md shadow-md transition-opacity duration-200"
                     />
                     {/* Pill badge for prompt */}
