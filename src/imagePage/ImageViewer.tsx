@@ -21,7 +21,7 @@ export function ImageViewer({
   return (
     <>
       <div
-        className={`relative cursor-zoom-in ${className}`}
+        className={`relative cursor-zoom-in ${className} rounded-2xl overflow-hidden`}
         tabIndex={0}
         role="button"
         aria-label="View image fullscreen"
@@ -33,7 +33,7 @@ export function ImageViewer({
         <img
           src={src}
           alt={alt}
-          className="max-h-[calc(var(--vh,1vh)*60)] max-w-full object-contain rounded-xl shadow-lg transition-all duration-300"
+          className="max-h-[calc(var(--vh,1vh)*60)] max-w-full object-contain w-full h-full"
         />
         {children}
       </div>

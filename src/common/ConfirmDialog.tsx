@@ -72,6 +72,9 @@ export function ConfirmDialog({
         </h3>
         <div className="text-gray-700 text-center mb-6">{message}</div>
         <div className="flex gap-2 w-full">
+          <Button variant="secondary" fullWidth onClick={onCancel}>
+            {cancelLabel}
+          </Button>
           <Button
             ref={confirmButtonRef}
             variant="primary"
@@ -79,9 +82,6 @@ export function ConfirmDialog({
             onClick={onConfirm}
           >
             {confirmLabel}
-          </Button>
-          <Button variant="secondary" fullWidth onClick={onCancel}>
-            {cancelLabel}
           </Button>
         </div>
       </div>
