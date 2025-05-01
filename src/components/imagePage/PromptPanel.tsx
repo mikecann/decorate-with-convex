@@ -15,7 +15,7 @@ interface PromptPanelProps {
 }
 
 const defaultPrompt =
-  "Please decordate this so it looks like a professional interior decorator has designed it";
+  "Please decorate this so it looks like a professional interior decorator has designed it";
 
 export function PromptPanel({
   imageId,

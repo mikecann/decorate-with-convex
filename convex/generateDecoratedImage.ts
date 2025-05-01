@@ -46,7 +46,7 @@ export const generateDecoratedImage = internalAction({
     const editResponse = await openai.images.edit({
       image: file,
       model: "gpt-image-1",
-      prompt,
+      prompt,    
       n: 1,
     });
 
