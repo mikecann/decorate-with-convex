@@ -17,6 +17,7 @@ import type * as auth from "../auth.js";
 import type * as generateDecoratedImage from "../generateDecoratedImage.js";
 import type * as http from "../http.js";
 import type * as images from "../images.js";
+import type * as resend_ResendOTPPasswordReset from "../resend/ResendOTPPasswordReset.js";
 import type * as router from "../router.js";
 
 /**
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   generateDecoratedImage: typeof generateDecoratedImage;
   http: typeof http;
   images: typeof images;
+  "resend/ResendOTPPasswordReset": typeof resend_ResendOTPPasswordReset;
   router: typeof router;
 }>;
 export declare const api: FilterApi<
