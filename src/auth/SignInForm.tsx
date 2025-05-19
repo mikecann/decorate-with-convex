@@ -2,8 +2,13 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../common/Button";
+import { InputField } from "../common/InputField";
 
-export function SignInForm() {
+export function SignInForm({
+  onForgotPassword,
+}: {
+  onForgotPassword?: () => void;
+}) {
   const { signIn } = useAuthActions();
   const [flow, setFlow] = useState<"signIn" | "signUp">("signIn");
   const [submitting, setSubmitting] = useState(false);
@@ -27,20 +32,30 @@ export function SignInForm() {
           });
         }}
       >
-        <input
-          className="input-field"
+        <InputField
           type="email"
           name="email"
           placeholder="Email"
           required
+          autoComplete="email"
         />
-        <input
-          className="input-field"
+        <InputField
           type="password"
           name="password"
           placeholder="Password"
           required
+          autoComplete="current-password"
         />
+        {flow === "signIn" && onForgotPassword && (
+          <Button
+            variant="link"
+            type="button"
+            className="self-end text-xs"
+            onClick={onForgotPassword}
+          >
+            Forgot password?
+          </Button>
+        )}
         <Button variant="primary" fullWidth type="submit" disabled={submitting}>
           {flow === "signIn" ? "Sign in" : "Sign up"}
         </Button>
