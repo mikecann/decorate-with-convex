@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useImageUpload } from "../common/utils";
 import { UploadCard } from "./UploadCard";
 import { ImageGrid } from "./ImageGrid";
+import { useQuery } from "convex-helpers/react/cache";
 
 export default function DashboardPage() {
   const images = useQuery(api.images.listImages);

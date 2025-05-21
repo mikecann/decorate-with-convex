@@ -5,6 +5,7 @@ import { ConvexReactClient } from "convex/react";
 import "./index.css";
 import App from "./App";
 import { RouteProvider } from "./routes";
+import { ConvexQueryCacheProvider } from "convex-helpers/react/cache";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
@@ -22,7 +23,9 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ConvexAuthProvider client={convex}>
       <RouteProvider>
-        <App />
+        <ConvexQueryCacheProvider>
+          <App />
+        </ConvexQueryCacheProvider>
       </RouteProvider>
     </ConvexAuthProvider>
   </StrictMode>
