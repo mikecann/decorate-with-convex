@@ -59,28 +59,8 @@ export function UploadCard({
                   onUpload(file);
                 }}
               />
-              <span className="button px-6 py-2">
-                {mobile ? "📱 Choose from Gallery" : "Select a file"}
-              </span>
+              <span className="button px-6 py-2">Select a file</span>
             </label>
-
-            {/* Camera option for mobile */}
-            {mobile && (
-              <label className="inline-block cursor-pointer">
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    onUpload(file);
-                  }}
-                />
-                <span className="button px-6 py-2">📷 Take Photo</span>
-              </label>
-            )}
           </div>
         </div>
       </div>
