@@ -7,6 +7,7 @@ import { routes } from "../routes";
 import { useState } from "react";
 import { Button } from "../common/Button";
 import { ConfirmDialog } from "../common/ConfirmDialog";
+import { RegenerateModal } from "./RegenerateModal";
 import { isMobile } from "../common/utils";
 
 interface PromptPanelProps {
@@ -28,10 +29,12 @@ export function PromptPanel({ image }: PromptPanelProps) {
       : undefined;
 
   const startGeneration = useMutation(api.images.startGeneration);
+  const startRegeneration = useMutation(api.images.startRegeneration);
   const deleteImage = useMutation(api.images.deleteImage);
   const onApiError = useApiErrorHandler();
   const [prompt, setPrompt] = useState(currentPrompt ?? defaultPrompt);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showRegenerateModal, setShowRegenerateModal] = useState(false);
 
   const handleDelete = async () => {
     setShowConfirm(true);
@@ -41,6 +44,44 @@ export function PromptPanel({ image }: PromptPanelProps) {
     setShowConfirm(false);
     await deleteImage({ imageId: image._id }).catch(onApiError);
     routes.dashboard().push();
+  };
+
+  const handleGenerate = () => {
+    if (!canGenerate) {
+      toast.error(
+        "Please wait for the image to finish uploading before generating."
+      );
+      return;
+    }
+
+    // If this is a re-generation (image already has decorated version), show modal
+    if (image.status.kind === "generated" && image.status.decoratedImage) {
+      setShowRegenerateModal(true);
+    } else {
+      // First time generation, use startGeneration
+      startGeneration({
+        imageId: image._id,
+        prompt,
+      }).catch(onApiError);
+    }
+  };
+
+  const handleSelectOriginal = () => {
+    setShowRegenerateModal(false);
+    startRegeneration({
+      imageId: image._id,
+      prompt,
+      baseImage: "original",
+    }).catch(onApiError);
+  };
+
+  const handleSelectDecorated = () => {
+    setShowRegenerateModal(false);
+    startRegeneration({
+      imageId: image._id,
+      prompt,
+      baseImage: "decorated",
+    }).catch(onApiError);
   };
 
   return (
@@ -53,6 +94,22 @@ export function PromptPanel({ image }: PromptPanelProps) {
         cancelLabel="Cancel"
         onConfirm={handleConfirmDelete}
         onCancel={() => setShowConfirm(false)}
+      />
+      <RegenerateModal
+        open={showRegenerateModal}
+        originalImageUrl={
+          image.status.kind === "generated" && image.status.image
+            ? image.status.image.url
+            : ""
+        }
+        decoratedImageUrl={
+          image.status.kind === "generated" && image.status.decoratedImage
+            ? image.status.decoratedImage.url
+            : ""
+        }
+        onSelectOriginal={handleSelectOriginal}
+        onSelectDecorated={handleSelectDecorated}
+        onCancel={() => setShowRegenerateModal(false)}
       />
       <div>
         <h2 className="text-2xl font-bold mb-4 text-slate-800">Image Prompt</h2>
@@ -78,18 +135,7 @@ export function PromptPanel({ image }: PromptPanelProps) {
           size="lg"
           fullWidth
           disabled={!canGenerate}
-          onClick={() => {
-            if (!canGenerate) {
-              toast.error(
-                "Please wait for the image to finish uploading before generating."
-              );
-              return;
-            }
-            startGeneration({
-              imageId: image._id,
-              prompt,
-            }).catch(onApiError);
-          }}
+          onClick={handleGenerate}
         >
           {currentPrompt ? "Re-generate" : "Generate"}
         </Button>
