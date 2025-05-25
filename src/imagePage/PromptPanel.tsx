@@ -7,13 +7,14 @@ import { routes } from "../routes";
 import { useState } from "react";
 import { Button } from "../common/Button";
 import { ConfirmDialog } from "../common/ConfirmDialog";
+import { isMobile } from "../common/utils";
 
 interface PromptPanelProps {
   image: Doc<"images">;
 }
 
 const defaultPrompt =
-  "Please decordate this so it looks like a professional interior decorator has designed it";
+  "Please decorate this so it looks like a professional interior decorator has designed it";
 
 export function PromptPanel({ image }: PromptPanelProps) {
   const canGenerate =
@@ -63,6 +64,10 @@ export function PromptPanel({ image }: PromptPanelProps) {
           className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[200px] resize-y text-base mb-4 shadow-sm"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
+          onFocus={(e) => {
+            // Select all text on mobile devices when focused
+            if (isMobile()) e.target.select();
+          }}
           placeholder={defaultPrompt}
           disabled={!canGenerate}
         />
