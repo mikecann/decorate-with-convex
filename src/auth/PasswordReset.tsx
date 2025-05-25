@@ -17,10 +17,18 @@ export function PasswordReset({
       onSubmit={(event) => {
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
-        void signIn("password", formData).then(() => {
-          toast.success("Check your email for a verification code.");
-          setStep({ email: formData.get("email") as string });
-        });
+        const email = (formData.get("email") as string).toLowerCase();
+        formData.set("email", email);
+        signIn("password", formData)
+          .then(() => {
+            toast.success("Check your email for a verification code.");
+            setStep({ email });
+          })
+          .catch((error) => {
+            console.error(error);
+            const errorMessage = error.message || `${error}`;
+            toast.error(`Failed to send verification code: ${errorMessage}`);
+          });
       }}
       className="flex flex-col gap-4"
     >
