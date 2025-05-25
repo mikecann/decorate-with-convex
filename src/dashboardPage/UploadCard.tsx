@@ -51,7 +51,7 @@ export function UploadCard({
               <input
                 type="file"
                 className="hidden"
-                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                accept="image/*"
                 multiple={false}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
@@ -80,13 +80,6 @@ export function UploadCard({
                 />
                 <span className="button px-6 py-2">📷 Take Photo</span>
               </label>
-            )}
-
-            {/* Debug info - remove this later */}
-            {mobile && (
-              <div className="text-xs text-gray-400 mt-2">
-                Mobile detected: {mobile.toString()}
-              </div>
             )}
           </div>
         </div>
