@@ -21,6 +21,15 @@ export const AppHeader: React.FC<Props> = ({}) => {
           >
             <span className="text-xl mr-1">←</span> Back
           </Button>
+        ) : route.name === "settings" ? (
+          <Button
+            variant="secondary"
+            className="rounded-full shadow text-gray-700 hover:bg-gray-100 flex items-center"
+            onClick={() => routes.dashboard().push()}
+            aria-label="Back to Dashboard"
+          >
+            <span className="text-xl mr-1">←</span> Back
+          </Button>
         ) : (
           <img
             src="/logo.png"
@@ -30,16 +39,6 @@ export const AppHeader: React.FC<Props> = ({}) => {
         )}
       </div>
       <div className="flex items-center gap-3">
-        {route.name === "settings" && (
-          <Button
-            variant="secondary"
-            className="rounded-full shadow text-gray-700 hover:bg-gray-100 flex items-center"
-            onClick={() => routes.dashboard().push()}
-            aria-label="Back to Dashboard"
-          >
-            <span className="text-xl mr-1">←</span> Back
-          </Button>
-        )}
         {route.name === "dashboard" && (
           <button
             onClick={() => routes.settings().push()}
