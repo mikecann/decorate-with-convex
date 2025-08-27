@@ -2,6 +2,8 @@ import * as React from "react";
 import { SignInForm } from "@/auth/SignInForm";
 import { useState } from "react";
 import { PasswordReset } from "@/auth/PasswordReset";
+import GitHubCorner from "../common/GitHubCorner";
+import ConvexCorner from "../common/ConvexCorner";
 
 interface Props {}
 
@@ -28,6 +30,8 @@ export const UnauthenticatedContent: React.FC<Props> = ({}) => {
           <SignInForm onForgotPassword={() => setShowReset(true)} />
         )}
       </div>
+      <GitHubCorner />
+      <ConvexCorner />
     </div>
   );
 };

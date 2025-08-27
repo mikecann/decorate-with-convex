@@ -4,6 +4,8 @@ import { useImageUpload } from "../common/utils";
 import { UploadCard } from "./UploadCard";
 import { ImageGrid } from "./ImageGrid";
 import { useQuery } from "convex-helpers/react/cache";
+import GitHubCorner from "../common/GitHubCorner";
+import ConvexCorner from "../common/ConvexCorner";
 
 export default function DashboardPage() {
   const images = useQuery(api.images.listImages);
@@ -19,6 +21,8 @@ export default function DashboardPage() {
         setIsDragging={setIsDragging}
       />
       <ImageGrid images={images || []} loading={isLoading} />
+      <GitHubCorner />
+      <ConvexCorner />
     </div>
   );
 }
