@@ -1,7 +1,8 @@
 import * as React from "react";
-import { SignOutButton } from "@/auth/SignOutButton";
 import { routes, useRoute } from "@/routes";
 import { Button } from "@/common/Button";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 interface Props {}
 
@@ -28,7 +29,27 @@ export const AppHeader: React.FC<Props> = ({}) => {
           />
         )}
       </div>
-      <SignOutButton />
+      <div className="flex items-center gap-3">
+        {route.name === "settings" && (
+          <Button
+            variant="secondary"
+            className="rounded-full shadow text-gray-700 hover:bg-gray-100 flex items-center"
+            onClick={() => routes.dashboard().push()}
+            aria-label="Back to Dashboard"
+          >
+            <span className="text-xl mr-1">←</span> Back
+          </Button>
+        )}
+        {route.name === "dashboard" && (
+          <button
+            onClick={() => routes.settings().push()}
+            className="w-10 h-10 rounded-full bg-blue-200 flex items-center justify-center text-white font-semibold text-sm hover:bg-blue-300 hover:shadow-lg hover:scale-105 transition-all duration-200"
+            aria-label="User Settings"
+          >
+            👤
+          </button>
+        )}
+      </div>
     </header>
   );
 };

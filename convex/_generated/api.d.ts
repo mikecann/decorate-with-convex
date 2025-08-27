@@ -19,6 +19,7 @@ import type * as http from "../http.js";
 import type * as images from "../images.js";
 import type * as resend_ResendOTPPasswordReset from "../resend/ResendOTPPasswordReset.js";
 import type * as router from "../router.js";
+import type * as userSettings from "../userSettings.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   images: typeof images;
   "resend/ResendOTPPasswordReset": typeof resend_ResendOTPPasswordReset;
   router: typeof router;
+  userSettings: typeof userSettings;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

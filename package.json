@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.82",
+    "@google/genai": "^1.15.0",
     "clsx": "^2.1.1",
     "convex": "^1.23.0",
     "convex-helpers": "^0.1.87",

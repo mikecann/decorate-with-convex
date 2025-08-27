@@ -4,6 +4,7 @@ import { useRoute } from "./routes";
 import DashboardPage from "./dashboardPage/DashboardPage";
 import { Id } from "../convex/_generated/dataModel";
 import ImagePage from "./imagePage/ImagePage";
+import SettingsPage from "./settingsPage/SettingsPage";
 import { BottomNav } from "./common/BottomNav";
 import { UnauthenticatedContent } from "@/auth/UnauthenticatedContent";
 import { AppHeader } from "./common/AppHeader";
@@ -19,6 +20,7 @@ export default function App() {
           {route.name === "image" && (
             <ImagePage imageId={route.params.imageId as Id<"images">} />
           )}
+          {route.name === "settings" && <SettingsPage />}
           <BottomNav />
         </Authenticated>
         <Unauthenticated>

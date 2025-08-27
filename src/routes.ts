@@ -6,4 +6,5 @@ export const { RouteProvider, useRoute, routes } = createRouter({
     { imageId: param.path.string },
     (p) => `/image/${p.imageId}`
   ),
+  settings: defineRoute("/settings"),
 });

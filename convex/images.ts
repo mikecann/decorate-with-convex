@@ -88,6 +88,15 @@ export const startGeneration = mutation({
       status: { kind: "generating", image: imageObj, prompt: args.prompt },
     });
 
+    // Get user settings to determine which model to use
+    const userSettings = await ctx.db
+      .query("userSettings")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .unique();
+
+    const imageModel =
+      userSettings?.imageModel ?? "google/gemini-2.5-flash-image-preview";
+
     // Schedule the AI generation
     await ctx.scheduler.runAfter(
       0,
@@ -96,6 +105,7 @@ export const startGeneration = mutation({
         imageId: args.imageId,
         image: imageObj,
         prompt: args.prompt,
+        model: imageModel,
       }
     );
   },
@@ -142,6 +152,15 @@ export const startRegeneration = mutation({
       },
     });
 
+    // Get user settings to determine which model to use
+    const userSettings = await ctx.db
+      .query("userSettings")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .unique();
+
+    const imageModel =
+      userSettings?.imageModel ?? "google/gemini-2.5-flash-image-preview";
+
     // Schedule the AI generation
     await ctx.scheduler.runAfter(
       0,
@@ -150,6 +169,7 @@ export const startRegeneration = mutation({
         imageId: args.imageId,
         image: baseImageObj,
         prompt: args.prompt,
+        model: imageModel,
         shouldDeletePreviousDecorated: args.baseImage === "decorated",
       }
     );
@@ -242,5 +262,16 @@ export const deleteImage = mutation({
       .exhaustive();
 
     await ctx.db.delete(args.imageId);
+  },
+});
+
+export const getCurrentUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
+    const user = await ctx.db.get(userId);
+    return user;
   },
 });

@@ -34,6 +34,13 @@ const schema = defineSchema({
       })
     ),
   }).index("by_user", ["userId"]),
+  userSettings: defineTable({
+    userId: v.id("users"),
+    imageModel: v.union(
+      v.literal("openai/gpt-image-1"),
+      v.literal("google/gemini-2.5-flash-image-preview")
+    ),
+  }).index("by_user", ["userId"]),
 });
 
 export const vv = typedV(schema);
