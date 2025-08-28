@@ -46,6 +46,7 @@ async function generateWithOpenAI(
     model: "gpt-image-1",
     prompt,
     n: 1,
+    quality: "medium",
   });
 
   // Log token usage and cost if available
