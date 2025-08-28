@@ -58,8 +58,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex-1 p-6">
-      <div className="max-w-2xl mx-auto">
+    <div className="flex-1 p-6 ">
+      <div className="max-w-2xl mx-auto mb-14">
         <h1 className="text-2xl font-bold mb-6">Settings</h1>
 
         <Card className="p-6 mb-6">
