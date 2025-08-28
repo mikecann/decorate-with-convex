@@ -14,7 +14,10 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as auth from "../auth.js";
-import type * as generateDecoratedImage from "../generateDecoratedImage.js";
+import type * as generate_generate from "../generate/generate.js";
+import type * as generate_google from "../generate/google.js";
+import type * as generate_lib from "../generate/lib.js";
+import type * as generate_openai from "../generate/openai.js";
 import type * as http from "../http.js";
 import type * as images from "../images.js";
 import type * as resend_ResendOTPPasswordReset from "../resend/ResendOTPPasswordReset.js";
@@ -31,7 +34,10 @@ import type * as userSettings from "../userSettings.js";
  */
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
-  generateDecoratedImage: typeof generateDecoratedImage;
+  "generate/generate": typeof generate_generate;
+  "generate/google": typeof generate_google;
+  "generate/lib": typeof generate_lib;
+  "generate/openai": typeof generate_openai;
   http: typeof http;
   images: typeof images;
   "resend/ResendOTPPasswordReset": typeof resend_ResendOTPPasswordReset;

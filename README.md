@@ -1,3 +1,5 @@
+![screenshot](./media/screenshot.jpg)
+
 # Decorate with Convex
 
 A real-time image decoration application that allows users to upload images and get AI-generated decorated versions. Built with Convex, React, and TypeScript.
@@ -29,19 +31,23 @@ A real-time image decoration application that allows users to upload images and 
    bun install
    ```
 3. Start the dev server which will create the `.env.local` file
+
    ```bash
    bun dev
    ```
 
 4. Set the OpenAI API key:
+
    ```bash
    bun convex env set OPEN_API_KEY <your-key>
+   bun convex env set GEMINI_API_KEY <your-key>
    ```
 
 5. Run the typescript type-cheker in another terminal window
-  ```bash
-  bun dev:ts
-  ```
+
+```bash
+bun dev:ts
+```
 
 5. Visit `http://localhost:5173` in your browser
 

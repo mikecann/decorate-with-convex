@@ -100,7 +100,7 @@ export const startGeneration = mutation({
     // Schedule the AI generation
     await ctx.scheduler.runAfter(
       0,
-      internal.generateDecoratedImage.generateDecoratedImage,
+      internal.generate.generate.generateDecoratedImage,
       {
         imageId: args.imageId,
         image: imageObj,
@@ -164,7 +164,7 @@ export const startRegeneration = mutation({
     // Schedule the AI generation
     await ctx.scheduler.runAfter(
       0,
-      internal.generateDecoratedImage.generateDecoratedImage,
+      internal.generate.generate.generateDecoratedImage,
       {
         imageId: args.imageId,
         image: baseImageObj,
