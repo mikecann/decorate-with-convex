@@ -58,3 +58,7 @@ Expected test count after this change: 26.
 - `tests/security.test.ts`
 - `src/common/utils.ts`
 - `tests/support.ts`
+
+## Vercel previews
+
+Production builds keep the existing Convex deploy and frontend build. Previews only build the frontend, using `VITE_CONVEX_URL` if supplied or the existing development backend `rare-grouse-703`. The build child has no Convex deploy key. A production key configured in Vercel therefore cannot deploy PR code to production.
