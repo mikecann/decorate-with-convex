@@ -18,7 +18,7 @@ export function setUploadingImageObjectUrl(imageId: string, objectUrl: string) {
 }
 
 export function getUploadingImageObjectUrl(
-  imageId: string
+  imageId: string,
 ): string | undefined {
   return uploadingImageObjectUrls[imageId];
 }
@@ -33,7 +33,7 @@ export function clearUploadingImageObjectUrl(imageId: string) {
 export async function resizeAndConvertImage(
   file: File,
   maxWidth = 2048,
-  maxHeight = 2048
+  maxHeight = 2048,
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new window.Image();
@@ -67,7 +67,7 @@ export async function resizeAndConvertImage(
           resolve(blob);
         },
         mimeType,
-        0.92 // quality
+        0.92, // quality
       );
     };
     img.onerror = reject;
@@ -77,7 +77,6 @@ export async function resizeAndConvertImage(
 
 export function useImageUpload() {
   const generateUploadUrl = useMutation(api.images.generateUploadUrl);
-  const markUploaded = useMutation(api.images.markUploaded);
   const onApiError = useApiErrorHandler();
 
   const handleUpload = async (file: File) => {
@@ -89,7 +88,7 @@ export function useImageUpload() {
         file.name.replace(/\.[^.]+$/, ".webp"),
         {
           type: processedBlob.type,
-        }
+        },
       );
       const { uploadUrl, imageId } = await generateUploadUrl();
       // Store object URL for use in ImagePage (from processed blob)
@@ -102,8 +101,11 @@ export function useImageUpload() {
         headers: { "Content-Type": processedFile.type },
         body: processedFile,
       });
-      const { storageId } = await result.json();
-      await markUploaded({ imageId, storageId });
+      // The server stores and links the upload itself, no storage ID needed.
+      if (!result.ok) {
+        const { error } = await result.json().catch(() => ({}));
+        throw new Error(error ?? `Upload failed with status ${result.status}`);
+      }
       // Clear object URL after upload is complete
       clearUploadingImageObjectUrl(imageId);
       toast.success("Image uploaded successfully!");

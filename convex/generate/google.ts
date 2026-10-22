@@ -1,7 +1,7 @@
 "use node";
 import { Id } from "../_generated/dataModel";
 import { GoogleGenAI } from "@google/genai";
-import { resizeAndConvertToWebp } from "./lib";
+import { resizeAndConvertToWebp, loadSourceImage } from "./lib";
 
 /**
  * Generate decorated image using Google's Gemini 2.5 Flash model
@@ -13,31 +13,26 @@ import { resizeAndConvertToWebp } from "./lib";
  */
 export async function generateWithGoogle(
   ctx: any,
-  image: { url: string; storageId: string },
-  prompt: string
+  image: { url: string; storageId: Id<"_storage"> },
+  prompt: string,
 ): Promise<{ url: string; storageId: Id<"_storage"> }> {
   console.log(
-    `[generateWithGoogle] Using Gemini 2.5 Flash Image Preview with prompt: ${prompt}`
+    `[generateWithGoogle] Using Gemini 2.5 Flash Image Preview with prompt: ${prompt}`,
   );
 
   const apiKey =
     process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GENAI_API_KEY ?? null;
   if (!apiKey)
     throw new Error(
-      "GEMINI_API_KEY or GOOGLE_GENAI_API_KEY is not set. Please configure your Convex env."
+      "GEMINI_API_KEY or GOOGLE_GENAI_API_KEY is not set. Please configure your Convex env.",
     );
 
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey, httpOptions: { timeout: 60_000 } });
 
-  // Load the source image and encode as base64 for inlineData
-  const response = await fetch(image.url);
-  if (!response.ok)
-    throw new Error(
-      `Failed to fetch uploaded image from storage: ${response.statusText}`
-    );
-  const mimeType = response.headers.get("content-type") || "image/png";
-  const arrayBuffer = await response.arrayBuffer();
-  const base64Image = Buffer.from(arrayBuffer).toString("base64");
+  const mimeType = "image/png";
+  const base64Image = (await loadSourceImage(ctx, image.storageId)).toString(
+    "base64",
+  );
 
   // Follow the official SDK example: text + inlineData parts
   const contents = [
@@ -53,6 +48,11 @@ export async function generateWithGoogle(
   const genResponse = await ai.models.generateContent({
     model: "gemini-2.5-flash-image-preview",
     contents,
+    config: {
+      candidateCount: 1,
+      maxOutputTokens: 2048,
+      responseModalities: ["TEXT", "IMAGE"],
+    },
   });
 
   // Log usage metadata if available and an estimated cost based on public pricing
@@ -60,7 +60,7 @@ export async function generateWithGoogle(
   if (usage) {
     const { promptTokenCount, candidatesTokenCount, totalTokenCount } = usage;
     console.log(
-      `[generateWithGoogle] Usage (reported): prompt_tokens=${promptTokenCount}, candidates_tokens=${candidatesTokenCount}, total_tokens=${totalTokenCount}`
+      `[generateWithGoogle] Usage (reported): prompt_tokens=${promptTokenCount}, candidates_tokens=${candidatesTokenCount}, total_tokens=${totalTokenCount}`,
     );
 
     // Pricing: $0.30 per 1M input tokens, $30.00 per 1M output tokens
@@ -73,7 +73,7 @@ export async function generateWithGoogle(
     const totalCost = inputCost + outputCost;
 
     console.log(
-      `[generateWithGoogle] Estimated cost breakdown: input=$${inputCost.toFixed(6)}, output=$${outputCost.toFixed(6)}, total=$${totalCost.toFixed(6)}`
+      `[generateWithGoogle] Estimated cost breakdown: input=$${inputCost.toFixed(6)}, output=$${outputCost.toFixed(6)}, total=$${totalCost.toFixed(6)}`,
     );
   }
 
@@ -93,6 +93,8 @@ export async function generateWithGoogle(
   if (!b64Out) throw new Error("Gemini response did not include image data");
 
   // Convert to webp and store in Convex storage
+  if (b64Out.length > 24 * 1024 * 1024)
+    throw new Error("Generated image is too large");
   const outBytes = Buffer.from(b64Out, "base64");
   let webpBuffer: Buffer;
   try {
