@@ -2,39 +2,30 @@
 import { Id } from "../_generated/dataModel";
 import OpenAI from "openai";
 import { File } from "formdata-node";
-import { resizeAndConvertToWebp, base64ToUint8Array } from "./lib";
-
-if (!process.env.OPENAI_API_KEY)
-  throw new Error(
-    `OPENAI_API_KEY is not set, please 'bun convex env set OPEN_API_KEY <your-key>'`
-  );
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import {
+  resizeAndConvertToWebp,
+  base64ToUint8Array,
+  loadSourceImage,
+} from "./lib";
 
 /**
  * Generate decorated image using OpenAI's GPT Image 1 model
  */
 export async function generateWithOpenAI(
   ctx: any,
-  image: { url: string; storageId: string },
-  prompt: string
+  image: { url: string; storageId: Id<"_storage"> },
+  prompt: string,
 ): Promise<{ url: string; storageId: Id<"_storage"> }> {
+  // The Google route must remain usable when this provider is not configured.
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY is not configured");
+  const openai = new OpenAI({ apiKey, maxRetries: 0, timeout: 60_000 });
   console.log(
-    `[generateWithOpenAI] Calling OpenAI image edit endpoint with prompt: ${prompt}`
+    `[generateWithOpenAI] Calling OpenAI image edit endpoint with prompt: ${prompt}`,
   );
 
-  const response = await fetch(image.url);
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch uploaded image from storage: ${response.statusText}`
-    );
-  }
-
-  // Convert response to a File object for OpenAI
-  const buffer = await response.arrayBuffer();
-  const file = new File([buffer], "image.png", {
-    type: response.headers.get("content-type") || "image/png",
-  });
+  const buffer = await loadSourceImage(ctx, image.storageId);
+  const file = new File([buffer], "image.png", { type: "image/png" });
 
   // Call OpenAI image edit endpoint
   const editResponse = await openai.images.edit({
@@ -42,6 +33,7 @@ export async function generateWithOpenAI(
     model: "gpt-image-1",
     prompt,
     n: 1,
+    size: "1024x1024",
     quality: "medium",
   });
 
@@ -65,14 +57,14 @@ export async function generateWithOpenAI(
     const totalCost = textInputCost + imageInputCost + imageOutputCost;
 
     console.log(
-      `[generateWithOpenAI] Usage (reported): text_input_tokens=${textTokens}, image_input_tokens=${imageInputTokens}, image_output_tokens=${imageOutputTokens}, total_input_tokens=${input_tokens}`
+      `[generateWithOpenAI] Usage (reported): text_input_tokens=${textTokens}, image_input_tokens=${imageInputTokens}, image_output_tokens=${imageOutputTokens}, total_input_tokens=${input_tokens}`,
     );
     console.log(
-      `[generateWithOpenAI] Estimated cost breakdown: text_input=$${textInputCost.toFixed(6)}, image_input=$${imageInputCost.toFixed(6)}, image_output=$${imageOutputCost.toFixed(6)}, total=$${totalCost.toFixed(6)}`
+      `[generateWithOpenAI] Estimated cost breakdown: text_input=$${textInputCost.toFixed(6)}, image_input=$${imageInputCost.toFixed(6)}, image_output=$${imageOutputCost.toFixed(6)}, total=$${totalCost.toFixed(6)}`,
     );
   } else {
     console.warn(
-      "[generateWithOpenAI] No usage info returned; cannot compute token-based cost."
+      "[generateWithOpenAI] No usage info returned; cannot compute token-based cost.",
     );
   }
 
@@ -82,6 +74,8 @@ export async function generateWithOpenAI(
 
   // Store the generated image in Convex storage
   console.log(`[generateWithOpenAI] Storing generated image in Convex storage`);
+  if (editResponse.data[0].b64_json.length > 24 * 1024 * 1024)
+    throw new Error("Generated image is too large");
   const bytes = base64ToUint8Array(editResponse.data[0].b64_json);
 
   // Resize and convert to webp using helper

@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as abuse from "../abuse.js";
 import type * as auth from "../auth.js";
 import type * as generate_generate from "../generate/generate.js";
 import type * as generate_google from "../generate/google.js";
@@ -33,6 +34,7 @@ import type * as userSettings from "../userSettings.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  abuse: typeof abuse;
   auth: typeof auth;
   "generate/generate": typeof generate_generate;
   "generate/google": typeof generate_google;
